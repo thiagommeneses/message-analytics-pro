@@ -13,7 +13,8 @@ import {
   processCsvFile, 
   filterCampaignData, 
   calculateMetrics, 
-  prepareDataForExport 
+  prepareDataForExport,
+  isUnsubscribeMessage
 } from '../services/csvService';
 import { useToast } from "@/hooks/use-toast";
 
@@ -70,14 +71,24 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const uploadCsv = async (file: File) => {
     try {
       setIsLoading(true);
+      console.log("Iniciando upload e processamento do CSV:", file.name);
       
       // Processa o arquivo CSV
       const data = await processCsvFile(file);
+      console.log(`Dados processados com sucesso: ${data.length} registros`);
+      
+      if (data.length === 0) {
+        throw new Error("Nenhum registro válido encontrado no arquivo");
+      }
+      
       setOriginalData(data);
       
       // Extrai valores únicos para os filtros
       const templates = [...new Set(data.map(item => item.templateTitle))];
       const statuses = [...new Set(data.map(item => item.campaignMessageStatus))];
+      
+      console.log("Templates disponíveis:", templates);
+      console.log("Status disponíveis:", statuses);
       
       setAvailableTemplates(templates);
       setAvailableStatuses(statuses as MessageStatus[]);
@@ -99,11 +110,20 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       
     } catch (error) {
       console.error("Erro ao processar arquivo:", error);
+      let errorMessage = "Verifique se o formato do arquivo é válido.";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro ao processar arquivo",
-        description: "Verifique se o formato do arquivo é válido.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // Reset state em caso de erro
+      resetData();
     } finally {
       setIsLoading(false);
     }

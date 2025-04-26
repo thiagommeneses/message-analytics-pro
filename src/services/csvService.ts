@@ -1,4 +1,3 @@
-
 import { CampaignData, FilterOptions, CampaignMetrics } from '../types/campaign';
 
 // Palavras que indicam descadastro
@@ -11,14 +10,29 @@ export const processCsvFile = (file: File): Promise<CampaignData[]> => {
     reader.onload = (event) => {
       try {
         const csvData = event.target?.result as string;
+        console.log("CSV carregado, tamanho:", csvData.length);
+        console.log("Primeiros 100 caracteres:", csvData.substring(0, 100));
+        
+        if (!csvData || csvData.trim() === "") {
+          throw new Error('O arquivo CSV está vazio');
+        }
+        
         const parsedData = parseCsv(csvData);
+        console.log(`CSV processado com sucesso. ${parsedData.length} registros encontrados.`);
+        
+        if (parsedData.length === 0) {
+          throw new Error('Nenhum registro válido encontrado no arquivo CSV');
+        }
+        
         resolve(parsedData);
       } catch (error) {
+        console.error("Erro ao processar CSV:", error);
         reject(error);
       }
     };
     
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error("Erro na leitura do arquivo:", error);
       reject(new Error('Erro ao ler o arquivo CSV'));
     };
     
@@ -28,9 +42,31 @@ export const processCsvFile = (file: File): Promise<CampaignData[]> => {
 
 const parseCsv = (csvContent: string): CampaignData[] => {
   const lines = csvContent.split('\n');
+  
+  if (lines.length <= 1) {
+    console.error("Arquivo CSV inválido: menos de 2 linhas");
+    throw new Error('Arquivo CSV inválido ou vazio');
+  }
+  
+  console.log(`Encontradas ${lines.length} linhas no CSV`);
+  console.log("Cabeçalho:", lines[0]);
+  
+  // Normalizar cabeçalhos e remover caracteres especiais
   const headers = lines[0].split(',').map(header => 
     header.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
   );
+  
+  console.log("Cabeçalhos normalizados:", headers);
+  
+  // Verificar se os cabeçalhos essenciais estão presentes
+  const hasPhoneHeader = headers.some(h => ['fullnumber', 'phonenumber', 'telefone'].includes(h));
+  const hasTemplateHeader = headers.some(h => ['templatetitle', 'template', 'campanha'].includes(h));
+  const hasStatusHeader = headers.some(h => ['campaignmessagestatus', 'status'].includes(h));
+  
+  if (!hasPhoneHeader || !hasTemplateHeader || !hasStatusHeader) {
+    console.error("Cabeçalhos essenciais ausentes:", {hasPhoneHeader, hasTemplateHeader, hasStatusHeader});
+    throw new Error('Formato de CSV inválido: cabeçalhos obrigatórios ausentes');
+  }
   
   const data: CampaignData[] = [];
   
@@ -38,6 +74,16 @@ const parseCsv = (csvContent: string): CampaignData[] => {
     if (!lines[i].trim()) continue;
     
     const values = parseCSVLine(lines[i]);
+    
+    // Verificar se o número de valores corresponde ao número de cabeçalhos
+    if (values.length !== headers.length) {
+      console.warn(`Linha ${i}: número de valores (${values.length}) não corresponde ao número de cabeçalhos (${headers.length})`);
+      console.warn("Linha:", lines[i]);
+      console.warn("Valores:", values);
+      // Continua para a próxima linha em vez de rejeitar todo o arquivo
+      continue;
+    }
+    
     const entry: Partial<CampaignData> = {};
     
     headers.forEach((header, index) => {
@@ -75,12 +121,29 @@ const parseCsv = (csvContent: string): CampaignData[] => {
       }
     });
     
-    // Verifica se tem os campos mínimos necessários
-    if (entry.fullNumber && entry.templateTitle && entry.campaignMessageStatus) {
-      data.push(entry as CampaignData);
+    // Verificar valores essenciais
+    if (!entry.fullNumber) {
+      console.warn(`Linha ${i}: número de telefone ausente, pulando registro`);
+      continue;
     }
+    
+    // Se faltam campos essenciais, criar valores padrão
+    if (!entry.templateTitle) {
+      entry.templateTitle = 'Desconhecido';
+    }
+    
+    if (!entry.campaignMessageStatus) {
+      entry.campaignMessageStatus = 'unknown';
+    }
+    
+    if (!entry.sentDate) {
+      entry.sentDate = new Date().toISOString();
+    }
+    
+    data.push(entry as CampaignData);
   }
   
+  console.log(`Processamento concluído: ${data.length} registros válidos de ${lines.length-1} linhas`);
   return data;
 };
 
@@ -124,10 +187,33 @@ const normalizeStatus = (status: string): CampaignData['campaignMessageStatus'] 
 // Formata a data para um formato consistente
 const formatDate = (dateStr: string): string => {
   try {
-    const date = new Date(dateStr);
+    // Tentar vários formatos de data
+    let date;
+    
+    // Formato ISO
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      date = new Date(dateStr);
+    } 
+    // Formato DD/MM/YYYY
+    else if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+      const parts = dateStr.split('/');
+      date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    // Outros formatos
+    else {
+      date = new Date(dateStr);
+    }
+    
+    // Verificar se a data é válida
+    if (isNaN(date.getTime())) {
+      console.warn(`Data inválida: ${dateStr}`);
+      return new Date().toISOString();
+    }
+    
     return date.toISOString();
   } catch (e) {
-    return dateStr; // Retorna a string original se não conseguir converter
+    console.warn(`Erro ao processar data: ${dateStr}`, e);
+    return new Date().toISOString(); // Data atual como fallback
   }
 };
 

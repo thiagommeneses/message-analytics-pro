@@ -3,16 +3,39 @@ import { ChangeEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCampaign } from "@/context/CampaignContext";
 import { Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const FileUpload = () => {
   const { uploadCsv, isLoading } = useCampaign();
   const [dragActive, setDragActive] = useState<boolean>(false);
+  const { toast } = useToast();
+
+  const validateAndProcessFile = (file: File | null) => {
+    if (!file) {
+      toast({
+        title: "Erro",
+        description: "Nenhum arquivo selecionado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, selecione um arquivo CSV válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("Iniciando processamento do arquivo:", file.name, "tamanho:", file.size);
+    uploadCsv(file);
+  };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      uploadCsv(file);
-    }
+    validateAndProcessFile(file || null);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -20,9 +43,7 @@ const FileUpload = () => {
     setDragActive(false);
     
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type === "text/csv") {
-      uploadCsv(file);
-    }
+    validateAndProcessFile(file || null);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
