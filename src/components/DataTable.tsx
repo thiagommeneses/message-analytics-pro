@@ -15,6 +15,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { isUnsubscribeMessage } from "@/services/csvService";
 import { useState } from "react";
@@ -151,7 +152,7 @@ const DataTable = () => {
               {/* Elipses */}
               {currentPage > 3 && (
                 <PaginationItem>
-                  <PaginationLink disabled>...</PaginationLink>
+                  <PaginationEllipsis />
                 </PaginationItem>
               )}
               
@@ -181,7 +182,7 @@ const DataTable = () => {
               {/* Elipses */}
               {currentPage < totalPages - 2 && (
                 <PaginationItem>
-                  <PaginationLink disabled>...</PaginationLink>
+                  <PaginationEllipsis />
                 </PaginationItem>
               )}
               
