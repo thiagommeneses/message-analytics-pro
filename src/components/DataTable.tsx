@@ -104,12 +104,13 @@ const DataTable = () => {
                       item.campaignMessageStatus === 'replied' ? 'bg-purple-100 text-purple-800' : 
                       item.campaignMessageStatus === 'failed' ? 'bg-red-100 text-red-800' : 
                       item.campaignMessageStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-gray-100 text-gray-800'}`}>
+                      'bg-yellow-50 text-yellow-600'}`}>
                     {item.campaignMessageStatus === 'delivered' ? 'Entregue' : 
                      item.campaignMessageStatus === 'read' ? 'Lido' :
                      item.campaignMessageStatus === 'replied' ? 'Respondido' :
                      item.campaignMessageStatus === 'failed' ? 'Falha' :
-                     item.campaignMessageStatus === 'pending' ? 'Pendente' : 'Desconhecido'}
+                     item.campaignMessageStatus === 'pending' ? 'Pendente' : 
+                     'Enviado'}
                   </span>
                 </TableCell>
                 <TableCell className="max-w-[200px]">

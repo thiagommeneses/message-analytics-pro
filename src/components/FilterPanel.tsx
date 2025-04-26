@@ -1,4 +1,3 @@
-
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -69,7 +68,6 @@ const FilterPanel = () => {
     
     const { startDate, endDate } = filters.dateRange;
     
-    // Se não temos data inicial ou se já temos as duas, começa um novo intervalo
     if (!startDate || (startDate && endDate)) {
       updateFilters({
         dateRange: {
@@ -78,9 +76,7 @@ const FilterPanel = () => {
         }
       });
     } 
-    // Senão, completa o intervalo
     else {
-      // Garante que a data final seja posterior à inicial
       if (date >= startDate) {
         updateFilters({
           dateRange: {
@@ -90,7 +86,6 @@ const FilterPanel = () => {
         });
         setCalendarOpen(false);
       } else {
-        // Se a nova data for anterior à inicial, inverte
         updateFilters({
           dateRange: {
             startDate: date,
@@ -181,7 +176,8 @@ const FilterPanel = () => {
                      status === 'read' ? 'Lido' :
                      status === 'replied' ? 'Respondido' :
                      status === 'failed' ? 'Falha' :
-                     status === 'pending' ? 'Pendente' : 'Desconhecido'}
+                     status === 'pending' ? 'Pendente' :
+                     status === 'sent' ? 'Enviado' : status}
                   </Label>
                 </div>
               ))}

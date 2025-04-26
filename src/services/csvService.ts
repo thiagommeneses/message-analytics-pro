@@ -59,11 +59,11 @@ const parseCsv = (csvContent: string): CampaignData[] => {
   console.log("Cabeçalhos normalizados:", headers);
   
   // Mapear cabeçalhos para os campos esperados
-  const phoneIndex = headers.findIndex(h => ['fullnumber', 'phonenumber', 'telefone', 'phone'].includes(h));
-  const templateIndex = headers.findIndex(h => ['templatetitle', 'template', 'campanha', 'template_title'].includes(h));
-  const statusIndex = headers.findIndex(h => ['campaignmessagestatus', 'status', 'campaign_message_status'].includes(h));
-  const dateIndex = headers.findIndex(h => ['sentdate', 'dataenvio', 'campaign_message_created_at'].includes(h));
-  const replyIndex = headers.findIndex(h => ['replymessagetext', 'resposta', 'reply_message_text'].includes(h));
+  const phoneIndex = headers.findIndex(h => ['phone', 'fullnumber', 'phonenumber', 'telefone'].includes(h));
+  const templateIndex = headers.findIndex(h => ['template_title', 'templatetitle', 'template', 'campanha'].includes(h));
+  const statusIndex = headers.findIndex(h => ['campaign_message_status', 'campaignmessagestatus', 'status'].includes(h));
+  const dateIndex = headers.findIndex(h => ['campaign_message_created_at', 'sentdate', 'dataenvio'].includes(h));
+  const replyIndex = headers.findIndex(h => ['reply_message_text', 'replymessagetext', 'resposta'].includes(h));
   const nameIndex = headers.findIndex(h => ['name', 'nome'].includes(h));
   
   console.log("Índices encontrados:", {
@@ -100,7 +100,7 @@ const parseCsv = (csvContent: string): CampaignData[] => {
       fullNumber: values[phoneIndex],
       templateTitle: values[templateIndex] || 'Desconhecido',
       campaignMessageStatus: normalizeStatus(values[statusIndex]),
-      sentDate: dateIndex !== -1 ? formatDate(values[dateIndex]) : new Date().toISOString()
+      sentDate: dateIndex !== -1 ? values[dateIndex] : new Date().toISOString()
     };
     
     // Adicionar campos opcionais se existirem
@@ -153,7 +153,7 @@ const normalizeStatus = (status: string): CampaignData['campaignMessageStatus'] 
   if (status.includes('fail') || status.includes('error')) return 'failed';
   if (status.includes('pend')) return 'pending';
   
-  return 'unknown';
+  return 'sent'; // Mudou de 'unknown' para 'sent'
 };
 
 // Formata a data para um formato consistente

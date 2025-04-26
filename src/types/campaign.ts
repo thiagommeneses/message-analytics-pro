@@ -1,4 +1,3 @@
-
 export interface CampaignData {
   fullNumber: string;
   name?: string;
@@ -15,7 +14,7 @@ export type MessageStatus =
   | 'replied' 
   | 'failed' 
   | 'pending' 
-  | 'unknown';
+  | 'sent';
 
 export interface FilterOptions {
   templates: string[];
