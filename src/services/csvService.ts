@@ -58,89 +58,61 @@ const parseCsv = (csvContent: string): CampaignData[] => {
   
   console.log("Cabeçalhos normalizados:", headers);
   
-  // Verificar se os cabeçalhos essenciais estão presentes
-  const hasPhoneHeader = headers.some(h => ['fullnumber', 'phonenumber', 'telefone'].includes(h));
-  const hasTemplateHeader = headers.some(h => ['templatetitle', 'template', 'campanha'].includes(h));
-  const hasStatusHeader = headers.some(h => ['campaignmessagestatus', 'status'].includes(h));
+  // Mapear cabeçalhos para os campos esperados
+  const phoneIndex = headers.findIndex(h => ['fullnumber', 'phonenumber', 'telefone', 'phone'].includes(h));
+  const templateIndex = headers.findIndex(h => ['templatetitle', 'template', 'campanha', 'template_title'].includes(h));
+  const statusIndex = headers.findIndex(h => ['campaignmessagestatus', 'status', 'campaign_message_status'].includes(h));
+  const dateIndex = headers.findIndex(h => ['sentdate', 'dataenvio', 'campaign_message_created_at'].includes(h));
+  const replyIndex = headers.findIndex(h => ['replymessagetext', 'resposta', 'reply_message_text'].includes(h));
+  const nameIndex = headers.findIndex(h => ['name', 'nome'].includes(h));
   
-  if (!hasPhoneHeader || !hasTemplateHeader || !hasStatusHeader) {
-    console.error("Cabeçalhos essenciais ausentes:", {hasPhoneHeader, hasTemplateHeader, hasStatusHeader});
-    throw new Error('Formato de CSV inválido: cabeçalhos obrigatórios ausentes');
+  console.log("Índices encontrados:", {
+    phoneIndex,
+    templateIndex,
+    statusIndex,
+    dateIndex,
+    replyIndex,
+    nameIndex
+  });
+  
+  // Verificar se temos pelo menos os índices essenciais
+  if (phoneIndex === -1 || templateIndex === -1 || statusIndex === -1) {
+    console.error("Cabeçalhos essenciais ausentes. Índices:", {phoneIndex, templateIndex, statusIndex});
+    throw new Error('Formato de CSV inválido: cabeçalhos obrigatórios ausentes. Verifique se o arquivo contém as colunas de telefone, template e status.');
   }
   
   const data: CampaignData[] = [];
   
+  // Processar linhas de dados (pular o cabeçalho)
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
     
     const values = parseCSVLine(lines[i]);
     
-    // Verificar se o número de valores corresponde ao número de cabeçalhos
-    if (values.length !== headers.length) {
-      console.warn(`Linha ${i}: número de valores (${values.length}) não corresponde ao número de cabeçalhos (${headers.length})`);
-      console.warn("Linha:", lines[i]);
-      console.warn("Valores:", values);
-      // Continua para a próxima linha em vez de rejeitar todo o arquivo
+    // Verificar se temos valores suficientes
+    if (values.length < Math.max(phoneIndex, templateIndex, statusIndex) + 1) {
+      console.warn(`Linha ${i}: número insuficiente de valores, pulando.`);
       continue;
     }
     
-    const entry: Partial<CampaignData> = {};
+    // Montar o objeto com os dados encontrados
+    const entry: CampaignData = {
+      fullNumber: values[phoneIndex],
+      templateTitle: values[templateIndex] || 'Desconhecido',
+      campaignMessageStatus: normalizeStatus(values[statusIndex]),
+      sentDate: dateIndex !== -1 ? formatDate(values[dateIndex]) : new Date().toISOString()
+    };
     
-    headers.forEach((header, index) => {
-      if (index < values.length) {
-        switch(header) {
-          case 'fullnumber':
-          case 'phonenumber':
-          case 'telefone':
-            entry.fullNumber = values[index];
-            break;
-          case 'name':
-          case 'nome':
-            entry.name = values[index];
-            break;
-          case 'templatetitle':
-          case 'template':
-          case 'campanha':
-            entry.templateTitle = values[index];
-            break;
-          case 'campaignmessagestatus':
-          case 'status':
-            entry.campaignMessageStatus = normalizeStatus(values[index]);
-            break;
-          case 'replymessagetext':
-          case 'resposta':
-            entry.replyMessageText = values[index];
-            break;
-          case 'sentdate':
-          case 'dataenvio':
-            entry.sentDate = formatDate(values[index]);
-            break;
-          default:
-            (entry as any)[header] = values[index];
-        }
-      }
-    });
-    
-    // Verificar valores essenciais
-    if (!entry.fullNumber) {
-      console.warn(`Linha ${i}: número de telefone ausente, pulando registro`);
-      continue;
+    // Adicionar campos opcionais se existirem
+    if (nameIndex !== -1 && values[nameIndex]) {
+      entry.name = values[nameIndex];
     }
     
-    // Se faltam campos essenciais, criar valores padrão
-    if (!entry.templateTitle) {
-      entry.templateTitle = 'Desconhecido';
+    if (replyIndex !== -1 && values[replyIndex]) {
+      entry.replyMessageText = values[replyIndex];
     }
     
-    if (!entry.campaignMessageStatus) {
-      entry.campaignMessageStatus = 'unknown';
-    }
-    
-    if (!entry.sentDate) {
-      entry.sentDate = new Date().toISOString();
-    }
-    
-    data.push(entry as CampaignData);
+    data.push(entry);
   }
   
   console.log(`Processamento concluído: ${data.length} registros válidos de ${lines.length-1} linhas`);
