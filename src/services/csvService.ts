@@ -1,3 +1,4 @@
+
 import { CampaignData, FilterOptions, CampaignMetrics } from '../types/campaign';
 
 // Palavras que indicam descadastro
@@ -53,7 +54,7 @@ const parseCsv = (csvContent: string): CampaignData[] => {
   
   // Normalizar cabeçalhos e remover caracteres especiais
   const headers = lines[0].split(',').map(header => 
-    header.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+    header.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
   );
   
   console.log("Cabeçalhos normalizados:", headers);
@@ -62,7 +63,7 @@ const parseCsv = (csvContent: string): CampaignData[] => {
   const phoneIndex = headers.findIndex(h => ['phone', 'fullnumber', 'phonenumber', 'telefone'].includes(h));
   const templateIndex = headers.findIndex(h => ['template_title', 'templatetitle', 'template', 'campanha'].includes(h));
   const statusIndex = headers.findIndex(h => ['campaign_message_status', 'campaignmessagestatus', 'status'].includes(h));
-  const dateIndex = headers.findIndex(h => ['campaign_message_created_at', 'sentdate', 'dataenvio'].includes(h));
+  const dateIndex = headers.findIndex(h => ['campaign_message_created_at', 'campaignmessagecreatedat', 'dataenvio', 'sentdate'].includes(h));
   const replyIndex = headers.findIndex(h => ['reply_message_text', 'replymessagetext', 'resposta'].includes(h));
   const nameIndex = headers.findIndex(h => ['name', 'nome'].includes(h));
   
@@ -100,7 +101,7 @@ const parseCsv = (csvContent: string): CampaignData[] => {
       fullNumber: values[phoneIndex],
       templateTitle: values[templateIndex] || 'Desconhecido',
       campaignMessageStatus: normalizeStatus(values[statusIndex]),
-      sentDate: dateIndex !== -1 ? values[dateIndex] : new Date().toISOString()
+      sentDate: dateIndex !== -1 && values[dateIndex] ? formatDate(values[dateIndex]) : new Date().toISOString()
     };
     
     // Adicionar campos opcionais se existirem
@@ -221,7 +222,13 @@ export const filterCampaignData = (
     // Filtro de data
     if (filters.dateRange.startDate && filters.dateRange.endDate) {
       const messageDate = new Date(item.sentDate);
-      if (messageDate < filters.dateRange.startDate || messageDate > filters.dateRange.endDate) {
+      const startDate = new Date(filters.dateRange.startDate);
+      const endDate = new Date(filters.dateRange.endDate);
+      
+      // Ajustar o final do dia para a data final
+      endDate.setHours(23, 59, 59, 999);
+      
+      if (messageDate < startDate || messageDate > endDate) {
         return false;
       }
     }
