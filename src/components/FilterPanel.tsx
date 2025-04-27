@@ -72,9 +72,10 @@ const FilterPanel = () => {
       updateFilters({
         dateRange: {
           startDate: date,
-          endDate: null
+          endDate: date
         }
       });
+      setCalendarOpen(false);
     } 
     else {
       if (date >= startDate) {
