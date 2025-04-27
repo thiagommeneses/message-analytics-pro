@@ -50,4 +50,5 @@ export interface ExportOptions {
   onlyPhoneNumber: boolean;
   includeNames: boolean;
   customColumns: string[];
+  removeDuplicates: boolean;
 }

@@ -279,13 +279,26 @@ export const calculateMetrics = (
 // Prepara os dados para exportação
 export const prepareDataForExport = (
   filteredData: CampaignData[],
-  exportOptions: { columns: string[] }
+  exportOptions: { columns: string[], removeDuplicates?: boolean }
 ): string => {
   // Cria o cabeçalho
   const header = exportOptions.columns.join(',');
   
+  // Se precisar remover duplicatas, filtra por número de telefone único
+  let dataToExport = filteredData;
+  if (exportOptions.removeDuplicates) {
+    const uniqueNumbers = new Set();
+    dataToExport = filteredData.filter(item => {
+      if (uniqueNumbers.has(item.fullNumber)) {
+        return false;
+      }
+      uniqueNumbers.add(item.fullNumber);
+      return true;
+    });
+  }
+  
   // Cria as linhas de dados
-  const rows = filteredData.map(item => {
+  const rows = dataToExport.map(item => {
     return exportOptions.columns.map(col => {
       const value = (item as any)[col] || '';
       // Se o valor contém vírgula, envolve em aspas

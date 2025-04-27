@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
@@ -29,11 +28,11 @@ const ExportOptions = () => {
   const [exportOptions, setExportOptions] = useState<ExportOptionsType>({
     onlyPhoneNumber: true,
     includeNames: false,
-    customColumns: []
+    customColumns: [],
+    removeDuplicates: false
   });
   const [exportType, setExportType] = useState<'simple' | 'custom'>('simple');
 
-  // Obtém todas as colunas disponíveis nos dados
   const availableColumns = filteredData.length > 0 
     ? Object.keys(filteredData[0]) 
     : [];
@@ -51,13 +50,15 @@ const ExportOptions = () => {
       setExportOptions({
         onlyPhoneNumber: true,
         includeNames: false,
-        customColumns: []
+        customColumns: [],
+        removeDuplicates: false
       });
     } else {
       setExportOptions({
         onlyPhoneNumber: false,
         includeNames: false,
-        customColumns: [...availableColumns]
+        customColumns: [...availableColumns],
+        removeDuplicates: false
       });
     }
   };
@@ -83,13 +84,15 @@ const ExportOptions = () => {
       setExportOptions({
         onlyPhoneNumber: true,
         includeNames: false,
-        customColumns: []
+        customColumns: [],
+        removeDuplicates: false
       });
     } else {
       setExportOptions({
         onlyPhoneNumber: false,
         includeNames: true,
-        customColumns: []
+        customColumns: [],
+        removeDuplicates: false
       });
     }
   };
@@ -144,6 +147,19 @@ const ExportOptions = () => {
                   onCheckedChange={() => handleNameOption('withNames')}
                 />
                 <Label htmlFor="with-names">Números de telefone e nomes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="remove-duplicates" 
+                  checked={exportOptions.removeDuplicates}
+                  onCheckedChange={(checked) => {
+                    setExportOptions(prev => ({
+                      ...prev,
+                      removeDuplicates: checked === true
+                    }));
+                  }}
+                />
+                <Label htmlFor="remove-duplicates">Remover números duplicados</Label>
               </div>
             </div>
           ) : (

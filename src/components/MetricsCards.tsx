@@ -1,4 +1,3 @@
-
 import { useCampaign } from "@/context/CampaignContext";
 import {
   Card,
@@ -19,7 +18,8 @@ const MetricsCards = () => {
           status === 'read' ? 'Lido' :
           status === 'replied' ? 'Respondido' :
           status === 'failed' ? 'Falha' :
-          status === 'pending' ? 'Pendente' : 'Desconhecido',
+          status === 'pending' ? 'Pendente' : 
+          status === 'sent' ? 'Enviado' : 'Enviado',
     value: count
   }));
   
@@ -36,7 +36,7 @@ const MetricsCards = () => {
     'Respondido': '#8B5CF6', // violet-500
     'Falha': '#EF4444', // red-500
     'Pendente': '#F59E0B', // amber-500
-    'Desconhecido': '#6B7280', // gray-500
+    'Enviado': '#6B7280', // gray-500
   };
   
   const RESPONSE_COLORS = ['#8B5CF6', '#E5E7EB']; // purple for responded, gray for not
