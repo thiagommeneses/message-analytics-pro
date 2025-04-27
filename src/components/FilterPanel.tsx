@@ -32,6 +32,7 @@ const FilterPanel = () => {
   } = useCampaign();
   
   const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
+  const [dateFilterMode, setDateFilterMode] = useState<'single' | 'range'>('single');
 
   const handleTemplateChange = (template: string) => {
     const currentTemplates = [...filters.templates];
@@ -66,9 +67,7 @@ const FilterPanel = () => {
   const handleDateRangeChange = (date: Date | undefined) => {
     if (!date) return;
     
-    const { startDate, endDate } = filters.dateRange;
-    
-    if (!startDate || (startDate && endDate)) {
+    if (dateFilterMode === 'single') {
       updateFilters({
         dateRange: {
           startDate: date,
@@ -76,24 +75,34 @@ const FilterPanel = () => {
         }
       });
       setCalendarOpen(false);
-    } 
-    else {
-      if (date >= startDate) {
-        updateFilters({
-          dateRange: {
-            startDate,
-            endDate: date
-          }
-        });
-        setCalendarOpen(false);
-      } else {
+    } else {
+      const { startDate } = filters.dateRange;
+      
+      if (!startDate || (startDate && filters.dateRange.endDate)) {
         updateFilters({
           dateRange: {
             startDate: date,
-            endDate: startDate
+            endDate: null
           }
         });
-        setCalendarOpen(false);
+      } else {
+        if (date >= startDate) {
+          updateFilters({
+            dateRange: {
+              startDate,
+              endDate: date
+            }
+          });
+          setCalendarOpen(false);
+        } else {
+          updateFilters({
+            dateRange: {
+              startDate: date,
+              endDate: startDate
+            }
+          });
+          setCalendarOpen(false);
+        }
       }
     }
   };
@@ -228,61 +237,89 @@ const FilterPanel = () => {
             Período de envio
           </AccordionTrigger>
           <AccordionContent>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "justify-start text-left font-normal w-full",
-                    !filters.dateRange.startDate && "text-muted-foreground"
-                  )}
-                  disabled={isLoading}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.dateRange.startDate ? (
-                    filters.dateRange.endDate ? (
-                      <>
-                        {format(filters.dateRange.startDate, "dd/MM/yyyy", { locale: ptBR })}
-                        {" - "}
-                        {format(filters.dateRange.endDate, "dd/MM/yyyy", { locale: ptBR })}
-                      </>
-                    ) : (
-                      format(filters.dateRange.startDate, "dd/MM/yyyy", { locale: ptBR })
-                    )
-                  ) : (
-                    "Selecione um período"
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={filters.dateRange.startDate || undefined}
-                  onSelect={handleDateRangeChange}
-                  disabled={isLoading}
-                  locale={ptBR}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {filters.dateRange.startDate && !filters.dateRange.endDate && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Selecione a data final do intervalo
-              </p>
-            )}
-            {filters.dateRange.startDate && filters.dateRange.endDate && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => updateFilters({
-                  dateRange: { startDate: null, endDate: null }
-                })}
+            <div className="space-y-4">
+              <RadioGroup 
+                value={dateFilterMode} 
+                onValueChange={(value: 'single' | 'range') => {
+                  setDateFilterMode(value);
+                  updateFilters({
+                    dateRange: {
+                      startDate: null,
+                      endDate: null
+                    }
+                  });
+                }}
                 disabled={isLoading}
               >
-                Limpar datas
-              </Button>
-            )}
+                <div className="flex items-center space-x-2 mb-2">
+                  <RadioGroupItem value="single" id="date-single" />
+                  <Label htmlFor="date-single">Dia específico</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="range" id="date-range" />
+                  <Label htmlFor="date-range">Intervalo de datas</Label>
+                </div>
+              </RadioGroup>
+
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal w-full",
+                      !filters.dateRange.startDate && "text-muted-foreground"
+                    )}
+                    disabled={isLoading}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dateRange.startDate ? (
+                      dateFilterMode === 'single' ? (
+                        format(filters.dateRange.startDate, "dd/MM/yyyy", { locale: ptBR })
+                      ) : filters.dateRange.endDate ? (
+                        <>
+                          {format(filters.dateRange.startDate, "dd/MM/yyyy", { locale: ptBR })}
+                          {" - "}
+                          {format(filters.dateRange.endDate, "dd/MM/yyyy", { locale: ptBR })}
+                        </>
+                      ) : (
+                        format(filters.dateRange.startDate, "dd/MM/yyyy", { locale: ptBR })
+                      )
+                    ) : (
+                      dateFilterMode === 'single' ? "Selecione uma data" : "Selecione um período"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dateRange.startDate || undefined}
+                    onSelect={handleDateRangeChange}
+                    disabled={isLoading}
+                    locale={ptBR}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {dateFilterMode === 'range' && filters.dateRange.startDate && !filters.dateRange.endDate && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Selecione a data final do intervalo
+                </p>
+              )}
+              
+              {filters.dateRange.startDate && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => updateFilters({
+                    dateRange: { startDate: null, endDate: null }
+                  })}
+                  disabled={isLoading}
+                >
+                  Limpar datas
+                </Button>
+              )}
+            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
