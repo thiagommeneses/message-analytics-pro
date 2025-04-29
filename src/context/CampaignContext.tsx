@@ -172,7 +172,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       
       link.setAttribute('href', url);
       link.setAttribute('download', `campanhas_filtradas_${new Date().toISOString().slice(0,10)}.csv`);
-      link.style.display = 'none';
+      link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
@@ -205,7 +205,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       
       link.setAttribute('href', url);
       link.setAttribute('download', `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
-      link.style.display = 'none';
+      link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
