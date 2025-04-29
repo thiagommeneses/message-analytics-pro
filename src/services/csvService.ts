@@ -1,4 +1,3 @@
-
 import { CampaignData, FilterOptions, CampaignMetrics } from '../types/campaign';
 
 // Palavras que indicam descadastro
@@ -195,7 +194,7 @@ export const filterCampaignData = (
   data: CampaignData[], 
   filters: FilterOptions
 ): CampaignData[] => {
-  return data.filter(item => {
+  let filteredData = data.filter(item => {
     // Filtro de template
     if (filters.templates.length && !filters.templates.includes(item.templateTitle)) {
       return false;
@@ -235,6 +234,20 @@ export const filterCampaignData = (
     
     return true;
   });
+  
+  // Aplicar filtro de números duplicados
+  if (filters.removeDuplicates && filteredData.length > 0) {
+    const uniqueNumbers = new Set<string>();
+    filteredData = filteredData.filter(item => {
+      if (uniqueNumbers.has(item.fullNumber)) {
+        return false;
+      }
+      uniqueNumbers.add(item.fullNumber);
+      return true;
+    });
+  }
+  
+  return filteredData;
 };
 
 // Verifica se a mensagem é de descadastro
@@ -286,26 +299,13 @@ export const calculateMetrics = (
 // Prepara os dados para exportação
 export const prepareDataForExport = (
   filteredData: CampaignData[],
-  exportOptions: { columns: string[], removeDuplicates?: boolean }
+  exportOptions: { columns: string[] }
 ): string => {
   // Cria o cabeçalho
   const header = exportOptions.columns.join(',');
   
-  // Se precisar remover duplicatas, filtra por número de telefone único
-  let dataToExport = filteredData;
-  if (exportOptions.removeDuplicates) {
-    const uniqueNumbers = new Set();
-    dataToExport = filteredData.filter(item => {
-      if (uniqueNumbers.has(item.fullNumber)) {
-        return false;
-      }
-      uniqueNumbers.add(item.fullNumber);
-      return true;
-    });
-  }
-  
   // Cria as linhas de dados
-  const rows = dataToExport.map(item => {
+  const rows = filteredData.map(item => {
     return exportOptions.columns.map(col => {
       const value = (item as any)[col] || '';
       // Se o valor contém vírgula, envolve em aspas
@@ -314,5 +314,30 @@ export const prepareDataForExport = (
   });
   
   // Junta tudo em uma string CSV
+  return [header, ...rows].join('\n');
+};
+
+// Prepara os dados para exportação para o formato Zenvia
+export const prepareZenviaExport = (
+  filteredData: CampaignData[],
+  messageText: string
+): string => {
+  // Cabeçalho específico para Zenvia
+  const header = 'celular;sms';
+  
+  // Cria as linhas de dados
+  const rows = filteredData.map(item => {
+    // Remove o + do número se existir
+    const phoneNumber = item.fullNumber.startsWith('+') 
+      ? item.fullNumber.substring(1) 
+      : item.fullNumber;
+    
+    // Formata a mensagem para CSV (escapa aspas duplas se existirem)
+    const formattedMessage = messageText.replace(/"/g, '""');
+    
+    return `${phoneNumber};"${formattedMessage}"`;
+  });
+  
+  // Junta tudo em uma string CSV com separador ponto e vírgula
   return [header, ...rows].join('\n');
 };

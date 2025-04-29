@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { 
   CampaignData, 
@@ -7,13 +6,15 @@ import {
   ResponseFilter,
   MessageStatus,
   DateRange,
-  ExportOptions
+  ExportOptions,
+  ZenviaExportOptions
 } from '../types/campaign';
 import { 
   processCsvFile, 
   filterCampaignData, 
   calculateMetrics, 
   prepareDataForExport,
+  prepareZenviaExport,
   isUnsubscribeMessage
 } from '../services/csvService';
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ interface CampaignContextType {
   uploadCsv: (file: File) => Promise<void>;
   updateFilters: (newFilters: Partial<FilterOptions>) => void;
   exportData: (options: ExportOptions) => void;
+  exportToZenvia: (options: ZenviaExportOptions) => void;
   resetData: () => void;
 }
 
@@ -40,7 +42,8 @@ const defaultFilters: FilterOptions = {
   dateRange: {
     startDate: null,
     endDate: null
-  }
+  },
+  removeDuplicates: false
 };
 
 const emptyMetrics: CampaignMetrics = {
@@ -190,6 +193,39 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  const exportToZenvia = (options: ZenviaExportOptions) => {
+    try {
+      // Prepara CSV para Zenvia
+      const csvContent = prepareZenviaExport(filteredData, options.messageText);
+      
+      // Cria um blob e gera download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Exportação para Zenvia concluída",
+        description: `${filteredData.length} registros exportados.`,
+      });
+      
+    } catch (error) {
+      console.error("Erro na exportação para Zenvia:", error);
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os dados para Zenvia.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const resetData = () => {
     setOriginalData([]);
     setFilteredData([]);
@@ -212,6 +248,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         uploadCsv,
         updateFilters,
         exportData,
+        exportToZenvia,
         resetData
       }}
     >

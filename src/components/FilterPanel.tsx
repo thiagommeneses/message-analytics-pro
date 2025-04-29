@@ -1,3 +1,4 @@
+
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +19,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Check } from "lucide-react";
 import { useState } from "react";
 import { MessageStatus, ResponseFilter } from "@/types/campaign";
 
@@ -45,6 +46,16 @@ const FilterPanel = () => {
     }
     
     updateFilters({ templates: currentTemplates });
+  };
+  
+  const handleSelectAllTemplates = () => {
+    // Se todos já estão selecionados ou alguns estão selecionados, desmarca todos
+    if (filters.templates.length > 0) {
+      updateFilters({ templates: [] });
+    } else {
+      // Caso contrário, seleciona todos
+      updateFilters({ templates: [...availableTemplates] });
+    }
   };
   
   const handleStatusChange = (status: MessageStatus) => {
@@ -115,9 +126,17 @@ const FilterPanel = () => {
       dateRange: {
         startDate: null,
         endDate: null
-      }
+      },
+      removeDuplicates: false
     });
   };
+
+  const handleRemoveDuplicatesChange = (checked: boolean) => {
+    updateFilters({ removeDuplicates: checked });
+  };
+
+  const areAllTemplatesSelected = availableTemplates.length > 0 && 
+    filters.templates.length === availableTemplates.length;
 
   return (
     <div className="bg-card rounded-lg border shadow-sm p-4">
@@ -136,13 +155,28 @@ const FilterPanel = () => {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates"]}>
+      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates"]}>
         {/* Filtro de Templates */}
         <AccordionItem value="templates">
           <AccordionTrigger className="text-sm font-medium">
             Campanhas
           </AccordionTrigger>
           <AccordionContent>
+            <div className="mb-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSelectAllTemplates}
+                disabled={isLoading || availableTemplates.length === 0}
+                className="w-full justify-between"
+              >
+                {areAllTemplatesSelected ? "Desmarcar todos" : "Selecionar todos"}
+                <Check className={cn(
+                  "h-4 w-4", 
+                  areAllTemplatesSelected ? "opacity-100" : "opacity-0"
+                )} />
+              </Button>
+            </div>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
               {availableTemplates.map((template) => (
                 <div key={template} className="flex items-center space-x-2">
@@ -320,6 +354,27 @@ const FilterPanel = () => {
                 </Button>
               )}
             </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Filtro de Números Duplicados */}
+        <AccordionItem value="duplicates">
+          <AccordionTrigger className="text-sm font-medium">
+            Números duplicados
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="remove-duplicates" 
+                checked={filters.removeDuplicates}
+                onCheckedChange={handleRemoveDuplicatesChange}
+                disabled={isLoading}
+              />
+              <Label htmlFor="remove-duplicates">Remover números duplicados</Label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Quando ativado, mantém apenas a primeira ocorrência de cada número de telefone.
+            </p>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

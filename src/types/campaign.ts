@@ -1,3 +1,4 @@
+
 export interface CampaignData {
   fullNumber: string;
   name?: string;
@@ -21,6 +22,7 @@ export interface FilterOptions {
   statuses: MessageStatus[];
   responseFilter: ResponseFilter;
   dateRange: DateRange;
+  removeDuplicates: boolean;
 }
 
 export type ResponseFilter = 
@@ -50,5 +52,8 @@ export interface ExportOptions {
   onlyPhoneNumber: boolean;
   includeNames: boolean;
   customColumns: string[];
-  removeDuplicates: boolean;
+}
+
+export interface ZenviaExportOptions {
+  messageText: string;
 }
