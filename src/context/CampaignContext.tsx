@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { 
   CampaignData, 
@@ -171,15 +170,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         // Cria um blob e gera download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
         
-        link.setAttribute('href', url);
-        link.setAttribute('download', `campanhas_filtradas_${new Date().toISOString().slice(0,10)}.csv`);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Usa um método mais seguro para download
+        downloadFile(url, `campanhas_filtradas_${new Date().toISOString().slice(0,10)}.csv`);
         
         toast({
           title: "Exportação concluída",
@@ -202,16 +195,11 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           
           const blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
           
-          link.setAttribute('href', url);
-          link.setAttribute('download', `campanhas_filtradas_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
-          link.style.visibility = 'hidden';
-          
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+          // Usa um setTimeout para criar uma pequena pausa entre os downloads
+          setTimeout(() => {
+            downloadFile(url, `campanhas_filtradas_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
+          }, i * 200);  // 200ms de intervalo entre cada download
         }
         
         toast({
@@ -239,15 +227,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         // Cria um blob e gera download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
         
-        link.setAttribute('href', url);
-        link.setAttribute('download', `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Usa um método mais seguro para download
+        downloadFile(url, `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
         
         toast({
           title: "Exportação para Zenvia concluída",
@@ -270,16 +252,11 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           
           const blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
           
-          link.setAttribute('href', url);
-          link.setAttribute('download', `zenvia_export_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
-          link.style.visibility = 'hidden';
-          
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+          // Usa um setTimeout para criar uma pequena pausa entre os downloads
+          setTimeout(() => {
+            downloadFile(url, `zenvia_export_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
+          }, i * 200);  // 200ms de intervalo entre cada download
         }
         
         toast({
@@ -295,6 +272,24 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
       });
     }
+  };
+  
+  // Função auxiliar para download seguro
+  const downloadFile = (url: string, filename: string) => {
+    // Cria um link temporário fora do DOM
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    
+    // Dispara o download sem adicionar o link ao DOM
+    document.body.appendChild(link);
+    link.click();
+    
+    // Remove o link e libera o URL
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
   
   const resetData = () => {
