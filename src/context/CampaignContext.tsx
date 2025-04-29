@@ -219,7 +219,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   
   const exportToZenvia = (options: ZenviaExportOptions) => {
     try {
-      // Prepara CSV para Zenvia
+      // Prepara CSV para Zenvia - sem aspas duplas no texto da mensagem
       const csvContent = prepareZenviaExport(filteredData, options.messageText);
       
       // Se não precisar dividir o arquivo, exporta normalmente
@@ -276,7 +276,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   
   // Função auxiliar para download seguro
   const downloadFile = (url: string, filename: string) => {
-    // Cria um link temporário fora do DOM
+    // Cria um link temporário
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', filename);
@@ -285,9 +285,11 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     document.body.appendChild(link);
     link.click();
     
-    // Remove o link e libera o URL
+    // Remove o link e libera o URL imediatamente após o clique
+    document.body.removeChild(link);
+    
+    // Liberamos o URL após um pequeno delay para garantir que o download comece
     setTimeout(() => {
-      document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }, 100);
   };

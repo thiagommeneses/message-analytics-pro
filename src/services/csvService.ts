@@ -332,10 +332,8 @@ export const prepareZenviaExport = (
       ? item.fullNumber.substring(1) 
       : item.fullNumber;
     
-    // Formata a mensagem para CSV (escapa aspas duplas se existirem)
-    const formattedMessage = messageText.replace(/"/g, '""');
-    
-    return `${phoneNumber};"${formattedMessage}"`;
+    // Não colocamos aspas no texto da mensagem para o formato Zenvia
+    return `${phoneNumber};${messageText}`;
   });
   
   // Junta tudo em uma string CSV com separador ponto e vírgula
