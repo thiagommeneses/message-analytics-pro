@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { 
   CampaignData, 
@@ -165,24 +166,59 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       // Prepara CSV
       const csvContent = prepareDataForExport(filteredData, { columns: columnsToExport });
       
-      // Cria um blob e gera download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `campanhas_filtradas_${new Date().toISOString().slice(0,10)}.csv`);
-      link.style.visibility = 'hidden';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Exportação concluída",
-        description: `${filteredData.length} registros exportados.`,
-      });
-      
+      // Se não precisar dividir o arquivo, exporta normalmente
+      if (!options.splitFiles || options.recordsPerFile <= 0) {
+        // Cria um blob e gera download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `campanhas_filtradas_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Exportação concluída",
+          description: `${filteredData.length} registros exportados.`,
+        });
+      } else {
+        // Divide em múltiplos arquivos
+        const csvHeader = columnsToExport.join(',') + '\n';
+        const csvRows = csvContent.split('\n').slice(1); // Remove o cabeçalho
+        const totalRecords = csvRows.length;
+        const recordsPerFile = options.recordsPerFile;
+        const totalFiles = Math.ceil(totalRecords / recordsPerFile);
+        
+        // Cria e baixa cada arquivo
+        for (let i = 0; i < totalFiles; i++) {
+          const startIdx = i * recordsPerFile;
+          const endIdx = Math.min(startIdx + recordsPerFile, totalRecords);
+          const fileRows = csvRows.slice(startIdx, endIdx);
+          const fileContent = csvHeader + fileRows.join('\n');
+          
+          const blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          
+          link.setAttribute('href', url);
+          link.setAttribute('download', `campanhas_filtradas_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
+          link.style.visibility = 'hidden';
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+        
+        toast({
+          title: "Exportação concluída",
+          description: `${filteredData.length} registros exportados em ${totalFiles} arquivos.`,
+        });
+      }
     } catch (error) {
       console.error("Erro na exportação:", error);
       toast({
@@ -198,24 +234,59 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       // Prepara CSV para Zenvia
       const csvContent = prepareZenviaExport(filteredData, options.messageText);
       
-      // Cria um blob e gera download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
-      link.style.visibility = 'hidden';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Exportação para Zenvia concluída",
-        description: `${filteredData.length} registros exportados.`,
-      });
-      
+      // Se não precisar dividir o arquivo, exporta normalmente
+      if (!options.splitFiles || options.recordsPerFile <= 0) {
+        // Cria um blob e gera download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Exportação para Zenvia concluída",
+          description: `${filteredData.length} registros exportados.`,
+        });
+      } else {
+        // Divide em múltiplos arquivos
+        const csvHeader = "celular;sms\n";
+        const csvRows = csvContent.split('\n').slice(1); // Remove o cabeçalho
+        const totalRecords = csvRows.length;
+        const recordsPerFile = options.recordsPerFile;
+        const totalFiles = Math.ceil(totalRecords / recordsPerFile);
+        
+        // Cria e baixa cada arquivo
+        for (let i = 0; i < totalFiles; i++) {
+          const startIdx = i * recordsPerFile;
+          const endIdx = Math.min(startIdx + recordsPerFile, totalRecords);
+          const fileRows = csvRows.slice(startIdx, endIdx);
+          const fileContent = csvHeader + fileRows.join('\n');
+          
+          const blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          
+          link.setAttribute('href', url);
+          link.setAttribute('download', `zenvia_export_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
+          link.style.visibility = 'hidden';
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+        
+        toast({
+          title: "Exportação para Zenvia concluída",
+          description: `${filteredData.length} registros exportados em ${totalFiles} arquivos.`,
+        });
+      }
     } catch (error) {
       console.error("Erro na exportação para Zenvia:", error);
       toast({

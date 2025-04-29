@@ -1,4 +1,3 @@
-
 export interface CampaignData {
   fullNumber: string;
   name?: string;
@@ -52,8 +51,12 @@ export interface ExportOptions {
   onlyPhoneNumber: boolean;
   includeNames: boolean;
   customColumns: string[];
+  splitFiles: boolean;
+  recordsPerFile: number;
 }
 
 export interface ZenviaExportOptions {
   messageText: string;
+  splitFiles: boolean;
+  recordsPerFile: number;
 }

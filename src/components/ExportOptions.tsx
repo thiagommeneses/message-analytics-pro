@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Download, FileText, MessageSquare } from "lucide-react";
 import { ExportOptions as ExportOptionsType, ZenviaExportOptions } from "@/types/campaign";
@@ -29,6 +30,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const ExportOptions = () => {
   const { exportData, exportToZenvia, filteredData, isLoading } = useCampaign();
@@ -38,9 +44,13 @@ const ExportOptions = () => {
     onlyPhoneNumber: true,
     includeNames: false,
     customColumns: [],
+    splitFiles: false,
+    recordsPerFile: 1000
   });
   const [zenviaOptions, setZenviaOptions] = useState<ZenviaExportOptions>({
-    messageText: ""
+    messageText: "",
+    splitFiles: false,
+    recordsPerFile: 1000
   });
   const [exportType, setExportType] = useState<'simple' | 'custom'>('simple');
 
@@ -64,12 +74,14 @@ const ExportOptions = () => {
     
     if (type === 'simple') {
       setExportOptions({
+        ...exportOptions,
         onlyPhoneNumber: true,
         includeNames: false,
         customColumns: [],
       });
     } else {
       setExportOptions({
+        ...exportOptions,
         onlyPhoneNumber: false,
         includeNames: false,
         customColumns: [...availableColumns],
@@ -96,12 +108,14 @@ const ExportOptions = () => {
   const handleNameOption = (option: 'onlyPhone' | 'withNames') => {
     if (option === 'onlyPhone') {
       setExportOptions({
+        ...exportOptions,
         onlyPhoneNumber: true,
         includeNames: false,
         customColumns: [],
       });
     } else {
       setExportOptions({
+        ...exportOptions,
         onlyPhoneNumber: false,
         includeNames: true,
         customColumns: [],
@@ -109,8 +123,39 @@ const ExportOptions = () => {
     }
   };
 
+  const toggleSplitFiles = (checked: boolean) => {
+    setExportOptions({
+      ...exportOptions,
+      splitFiles: checked
+    });
+  };
+
+  const toggleZenviaSplitFiles = (checked: boolean) => {
+    setZenviaOptions({
+      ...zenviaOptions,
+      splitFiles: checked
+    });
+  };
+
+  const handleRecordsPerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10) || 1000;
+    setExportOptions({
+      ...exportOptions,
+      recordsPerFile: value
+    });
+  };
+
+  const handleZenviaRecordsPerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10) || 1000;
+    setZenviaOptions({
+      ...zenviaOptions,
+      recordsPerFile: value
+    });
+  };
+
   const handleSmsTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setZenviaOptions({
+      ...zenviaOptions,
       messageText: e.target.value.slice(0, 130)
     });
   };
@@ -211,6 +256,35 @@ const ExportOptions = () => {
                 )}
               </div>
             )}
+
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Checkbox 
+                  id="split-files" 
+                  checked={exportOptions.splitFiles}
+                  onCheckedChange={toggleSplitFiles}
+                />
+                <Label htmlFor="split-files">Dividir em múltiplos arquivos</Label>
+              </div>
+              
+              {exportOptions.splitFiles && (
+                <div className="ml-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="records-per-file">Registros por arquivo</Label>
+                    <Input 
+                      id="records-per-file" 
+                      type="number" 
+                      value={exportOptions.recordsPerFile} 
+                      onChange={handleRecordsPerFileChange}
+                      min={1}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Total de arquivos: {Math.ceil(filteredData.length / exportOptions.recordsPerFile)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
@@ -254,6 +328,35 @@ const ExportOptions = () => {
               <p className="text-sm text-muted-foreground flex justify-end">
                 {zenviaOptions.messageText.length}/130 caracteres
               </p>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Checkbox 
+                  id="zenvia-split-files" 
+                  checked={zenviaOptions.splitFiles}
+                  onCheckedChange={toggleZenviaSplitFiles}
+                />
+                <Label htmlFor="zenvia-split-files">Dividir em múltiplos arquivos</Label>
+              </div>
+              
+              {zenviaOptions.splitFiles && (
+                <div className="ml-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="zenvia-records-per-file">Registros por arquivo</Label>
+                    <Input 
+                      id="zenvia-records-per-file" 
+                      type="number" 
+                      value={zenviaOptions.recordsPerFile} 
+                      onChange={handleZenviaRecordsPerFileChange}
+                      min={1}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Total de arquivos: {Math.ceil(filteredData.length / zenviaOptions.recordsPerFile)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="text-sm">
