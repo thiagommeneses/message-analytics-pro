@@ -3,6 +3,14 @@ import { CampaignData, FilterOptions, CampaignMetrics } from '../types/campaign'
 // Palavras que indicam descadastro
 const UNSUBSCRIBE_KEYWORDS = ['sair', 'pare', 'não', 'nao', 'descadastrar', 'cancelar', 'remove', 'stop', 'unsubscribe'];
 
+// Padrões para validação de números de telefone brasileiro
+const BR_PHONE_REGEX = {
+  // Formato: +55 + DDD(2 dígitos) + 9 + 8 dígitos
+  VALID_FORMAT: /^\+?55(\d{2})(9\d{8})$/,
+  // Formato que pode ser corrigido: +55 + DDD(2 dígitos) + 8 dígitos (começando com 8 ou 9)
+  CORRECTABLE: /^\+?55(\d{2})([89]\d{7})$/
+};
+
 export const processCsvFile = (file: File): Promise<CampaignData[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -189,6 +197,41 @@ const formatDate = (dateStr: string): string => {
   }
 };
 
+// Verifica se um número de telefone é válido para WhatsApp no Brasil
+export const isValidBrazilianMobileNumber = (phoneNumber: string): boolean => {
+  // Remove espaços, traços e parênteses
+  const cleanNumber = phoneNumber.replace(/[\s\-()]/g, '');
+  
+  // Verifica o formato válido para WhatsApp brasileiro
+  return BR_PHONE_REGEX.VALID_FORMAT.test(cleanNumber);
+};
+
+// Tenta corrigir um número de telefone brasileiro para o padrão WhatsApp
+export const correctBrazilianMobileNumber = (phoneNumber: string): string => {
+  // Remove espaços, traços e parênteses
+  const cleanNumber = phoneNumber.replace(/[\s\-()]/g, '');
+  
+  // Se já é válido, retorna como está
+  if (isValidBrazilianMobileNumber(cleanNumber)) {
+    return cleanNumber;
+  }
+  
+  // Tenta corrigir números que começam com 8 após o DDD, adicionando o 9
+  const correctableMatch = cleanNumber.match(BR_PHONE_REGEX.CORRECTABLE);
+  if (correctableMatch) {
+    const ddd = correctableMatch[1];
+    const number = correctableMatch[2];
+    
+    // Se começa com 8, adiciona o 9 na frente
+    if (number.startsWith('8')) {
+      return `+55${ddd}9${number}`;
+    }
+  }
+  
+  // Se não conseguiu corrigir, retorna o número original
+  return phoneNumber;
+};
+
 // Função para filtrar os dados com base nas opções selecionadas
 export const filterCampaignData = (
   data: CampaignData[], 
@@ -229,6 +272,22 @@ export const filterCampaignData = (
       
       if (messageDate < startDate || messageDate > endDate) {
         return false;
+      }
+    }
+    
+    // Filtro de números inválidos
+    if (filters.removeInvalidNumbers) {
+      // Primeiro tenta corrigir o número (para o caso de faltarem 9 dígitos)
+      const correctedNumber = correctBrazilianMobileNumber(item.fullNumber);
+      
+      // Se após a tentativa de correção ainda não é válido, remove
+      if (!isValidBrazilianMobileNumber(correctedNumber)) {
+        return false;
+      }
+      
+      // Atualiza o número corrigido no item
+      if (correctedNumber !== item.fullNumber) {
+        item.fullNumber = correctedNumber;
       }
     }
     
@@ -273,6 +332,11 @@ export const calculateMetrics = (
     item => item.replyMessageText && isUnsubscribeMessage(item.replyMessageText)
   ).length;
   
+  // Contagem de números inválidos
+  const invalidNumbers = allData.filter(
+    item => !isValidBrazilianMobileNumber(correctBrazilianMobileNumber(item.fullNumber))
+  ).length;
+  
   // Distribuição por status
   const statusDistribution: Record<string, number> = {};
   filteredData.forEach(item => {
@@ -288,6 +352,7 @@ export const calculateMetrics = (
     filteredContacts,
     notResponded,
     unsubscribed,
+    invalidNumbers,
     statusDistribution,
     responseDistribution: {
       responded,

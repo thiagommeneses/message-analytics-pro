@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { 
   CampaignData, 
@@ -15,7 +16,9 @@ import {
   calculateMetrics, 
   prepareDataForExport,
   prepareZenviaExport,
-  isUnsubscribeMessage
+  isUnsubscribeMessage,
+  isValidBrazilianMobileNumber,
+  correctBrazilianMobileNumber
 } from '../services/csvService';
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,7 +46,8 @@ const defaultFilters: FilterOptions = {
     startDate: null,
     endDate: null
   },
-  removeDuplicates: false
+  removeDuplicates: false,
+  removeInvalidNumbers: false
 };
 
 const emptyMetrics: CampaignMetrics = {
@@ -51,6 +55,7 @@ const emptyMetrics: CampaignMetrics = {
   filteredContacts: 0,
   notResponded: 0,
   unsubscribed: 0,
+  invalidNumbers: 0,
   statusDistribution: {} as Record<MessageStatus, number>,
   responseDistribution: {
     responded: 0,

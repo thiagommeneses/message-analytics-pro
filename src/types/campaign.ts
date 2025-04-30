@@ -1,3 +1,4 @@
+
 export interface CampaignData {
   fullNumber: string;
   name?: string;
@@ -22,6 +23,7 @@ export interface FilterOptions {
   responseFilter: ResponseFilter;
   dateRange: DateRange;
   removeDuplicates: boolean;
+  removeInvalidNumbers: boolean; // Nova opção de filtro
 }
 
 export type ResponseFilter = 
@@ -40,6 +42,7 @@ export interface CampaignMetrics {
   filteredContacts: number;
   notResponded: number;
   unsubscribed: number;
+  invalidNumbers: number; // Nova métrica
   statusDistribution: Record<MessageStatus, number>;
   responseDistribution: {
     responded: number;

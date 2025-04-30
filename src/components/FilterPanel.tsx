@@ -1,4 +1,3 @@
-
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +18,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon, Filter, Check } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Check, PhoneCall } from "lucide-react";
 import { useState } from "react";
 import { MessageStatus, ResponseFilter } from "@/types/campaign";
 
@@ -118,21 +117,12 @@ const FilterPanel = () => {
     }
   };
   
-  const clearFilters = () => {
-    updateFilters({
-      templates: [],
-      statuses: [],
-      responseFilter: 'all',
-      dateRange: {
-        startDate: null,
-        endDate: null
-      },
-      removeDuplicates: false
-    });
-  };
-
   const handleRemoveDuplicatesChange = (checked: boolean) => {
     updateFilters({ removeDuplicates: checked });
+  };
+
+  const handleRemoveInvalidNumbersChange = (checked: boolean) => {
+    updateFilters({ removeInvalidNumbers: checked });
   };
 
   const areAllTemplatesSelected = availableTemplates.length > 0 && 
@@ -155,7 +145,7 @@ const FilterPanel = () => {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates"]}>
+      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates", "phoneNumbers"]}>
         {/* Filtro de Templates */}
         <AccordionItem value="templates">
           <AccordionTrigger className="text-sm font-medium">
@@ -374,6 +364,31 @@ const FilterPanel = () => {
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               Quando ativado, mantém apenas a primeira ocorrência de cada número de telefone.
+            </p>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Novo Filtro de Números de Telefone */}
+        <AccordionItem value="phoneNumbers">
+          <AccordionTrigger className="text-sm font-medium">
+            <div className="flex items-center">
+              <PhoneCall className="h-4 w-4 mr-2" />
+              Validação de números
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="remove-invalid-numbers" 
+                checked={filters.removeInvalidNumbers}
+                onCheckedChange={handleRemoveInvalidNumbersChange}
+                disabled={isLoading}
+              />
+              <Label htmlFor="remove-invalid-numbers">Validar números de telefone</Label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Quando ativado, valida e corrige números para o formato WhatsApp brasileiro (+55 DDD 9XXXXXXXX).
+              Números que começam com 8 após o DDD receberão um 9 adicional automaticamente.
             </p>
           </AccordionContent>
         </AccordionItem>
