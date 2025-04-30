@@ -1,3 +1,4 @@
+
 import { CampaignData, FilterOptions, CampaignMetrics } from '../types/campaign';
 
 // Palavras que indicam descadastro
@@ -237,7 +238,18 @@ export const filterCampaignData = (
   data: CampaignData[], 
   filters: FilterOptions
 ): CampaignData[] => {
-  let filteredData = data.filter(item => {
+  // Primeiro criamos uma cópia dos dados para não modificar o original diretamente
+  let processedData = [...data];
+  
+  // Aplicamos a correção de números se o filtro estiver ativado
+  if (filters.removeInvalidNumbers) {
+    processedData = processedData.map(item => ({
+      ...item,
+      fullNumber: correctBrazilianMobileNumber(item.fullNumber)
+    }));
+  }
+  
+  let filteredData = processedData.filter(item => {
     // Filtro de template
     if (filters.templates.length && !filters.templates.includes(item.templateTitle)) {
       return false;
@@ -275,20 +287,9 @@ export const filterCampaignData = (
       }
     }
     
-    // Filtro de números inválidos
-    if (filters.removeInvalidNumbers) {
-      // Primeiro tenta corrigir o número (para o caso de faltarem 9 dígitos)
-      const correctedNumber = correctBrazilianMobileNumber(item.fullNumber);
-      
-      // Se após a tentativa de correção ainda não é válido, remove
-      if (!isValidBrazilianMobileNumber(correctedNumber)) {
-        return false;
-      }
-      
-      // Atualiza o número corrigido no item
-      if (correctedNumber !== item.fullNumber) {
-        item.fullNumber = correctedNumber;
-      }
+    // Filtro de números inválidos - agora após tentativa de correção
+    if (filters.removeInvalidNumbers && !isValidBrazilianMobileNumber(item.fullNumber)) {
+      return false;
     }
     
     return true;

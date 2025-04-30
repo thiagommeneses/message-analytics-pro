@@ -279,7 +279,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Função auxiliar para download seguro
+  // Função auxiliar para download seguro - CORRIGIDA para resolver problemas de UI bloqueada
   const downloadFile = (url: string, filename: string) => {
     // Cria um link temporário
     const link = document.createElement('a');
@@ -291,10 +291,10 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     link.click();
     
     // Remove o link e libera o URL imediatamente após o clique
-    document.body.removeChild(link);
-    
-    // Liberamos o URL após um pequeno delay para garantir que o download comece
     setTimeout(() => {
+      // Remover o link do DOM é crucial para evitar problemas de UI bloqueada
+      document.body.removeChild(link);
+      // Liberamos o URL para liberar memória
       URL.revokeObjectURL(url);
     }, 100);
   };

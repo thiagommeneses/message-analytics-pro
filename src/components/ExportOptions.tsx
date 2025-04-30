@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
@@ -30,11 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 const ExportOptions = () => {
   const { exportData, exportToZenvia, filteredData, isLoading } = useCampaign();
@@ -60,12 +54,18 @@ const ExportOptions = () => {
 
   const handleExport = () => {
     exportData(exportOptions);
-    setIsDialogOpen(false);
+    // Fechamos o diálogo com um pequeno delay para garantir que o processo de exportação inicie primeiro
+    setTimeout(() => {
+      setIsDialogOpen(false);
+    }, 100);
   };
 
   const handleZenviaExport = () => {
     exportToZenvia(zenviaOptions);
-    setIsZenviaDialogOpen(false);
+    // Fechamos o diálogo com um pequeno delay para garantir que o processo de exportação inicie primeiro
+    setTimeout(() => {
+      setIsZenviaDialogOpen(false);
+    }, 100);
   };
 
   const handleExportTypeChange = (value: string) => {
@@ -181,8 +181,14 @@ const ExportOptions = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Dialog para exportação padrão CSV */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Dialog para exportação padrão CSV - Usando onOpenChange com tratamento melhorado */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setTimeout(() => setIsDialogOpen(false), 0);
+        } else {
+          setIsDialogOpen(true);
+        }
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Opções de exportação</DialogTitle>
@@ -303,8 +309,14 @@ const ExportOptions = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para exportação Zenvia */}
-      <Dialog open={isZenviaDialogOpen} onOpenChange={setIsZenviaDialogOpen}>
+      {/* Dialog para exportação Zenvia - Usando onOpenChange com tratamento melhorado */}
+      <Dialog open={isZenviaDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setTimeout(() => setIsZenviaDialogOpen(false), 0);
+        } else {
+          setIsZenviaDialogOpen(true);
+        }
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Exportar para zEnvia</DialogTitle>
