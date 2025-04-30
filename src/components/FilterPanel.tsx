@@ -125,6 +125,21 @@ const FilterPanel = () => {
     updateFilters({ removeInvalidNumbers: checked });
   };
 
+  const clearFilters = () => {
+    updateFilters({
+      templates: [],
+      statuses: [],
+      responseFilter: 'all',
+      dateRange: {
+        startDate: null,
+        endDate: null
+      },
+      removeDuplicates: false,
+      removeInvalidNumbers: false
+    });
+    setCalendarOpen(false);
+  };
+
   const areAllTemplatesSelected = availableTemplates.length > 0 && 
     filters.templates.length === availableTemplates.length;
 
