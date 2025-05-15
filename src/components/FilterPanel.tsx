@@ -1,8 +1,8 @@
+
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Accordion,
   AccordionContent,
@@ -20,7 +20,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon, Filter, Check, PhoneCall } from "lucide-react";
 import { useState } from "react";
-import { MessageStatus, ResponseFilter } from "@/types/campaign";
+import { MessageStatus } from "@/types/campaign";
+import ResponseFilterOptions from "./FilterOptions";
 
 const FilterPanel = () => {
   const { 
@@ -68,10 +69,6 @@ const FilterPanel = () => {
     }
     
     updateFilters({ statuses: currentStatuses });
-  };
-  
-  const handleResponseFilterChange = (value: ResponseFilter) => {
-    updateFilters({ responseFilter: value });
   };
   
   const handleDateRangeChange = (date: Date | undefined) => {
@@ -245,28 +242,7 @@ const FilterPanel = () => {
             Respostas do contato
           </AccordionTrigger>
           <AccordionContent>
-            <RadioGroup 
-              value={filters.responseFilter} 
-              onValueChange={(value) => handleResponseFilterChange(value as ResponseFilter)}
-              disabled={isLoading}
-            >
-              <div className="flex items-center space-x-2 mb-2">
-                <RadioGroupItem value="all" id="r-all" />
-                <Label htmlFor="r-all">Todos os contatos</Label>
-              </div>
-              <div className="flex items-center space-x-2 mb-2">
-                <RadioGroupItem value="responded" id="r-responded" />
-                <Label htmlFor="r-responded">Somente quem respondeu</Label>
-              </div>
-              <div className="flex items-center space-x-2 mb-2">
-                <RadioGroupItem value="not_responded" id="r-not-responded" />
-                <Label htmlFor="r-not-responded">Somente quem não respondeu</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="unsubscribed" id="r-unsubscribed" />
-                <Label htmlFor="r-unsubscribed">Somente descadastros</Label>
-              </div>
-            </RadioGroup>
+            <ResponseFilterOptions disabled={isLoading} />
           </AccordionContent>
         </AccordionItem>
 
@@ -383,7 +359,7 @@ const FilterPanel = () => {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Novo Filtro de Números de Telefone */}
+        {/* Filtro de Números de Telefone */}
         <AccordionItem value="phoneNumbers">
           <AccordionTrigger className="text-sm font-medium">
             <div className="flex items-center">

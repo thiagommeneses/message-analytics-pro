@@ -213,7 +213,7 @@ export const correctBrazilianMobileNumber = (phoneNumber: string): string => {
   const cleanNumber = phoneNumber.replace(/[\s\-()]/g, '');
   
   // Se já é válido, retorna como está
-  if (isValidBrazilianMobileNumber(cleanNumber)) {
+  if (BR_PHONE_REGEX.VALID_FORMAT.test(cleanNumber)) {
     return cleanNumber;
   }
   
@@ -223,9 +223,16 @@ export const correctBrazilianMobileNumber = (phoneNumber: string): string => {
     const ddd = correctableMatch[1];
     const number = correctableMatch[2];
     
-    // Se começa com 8, adiciona o 9 na frente
-    if (number.startsWith('8')) {
-      return `+55${ddd}9${number}`;
+    // Se começa com 8 ou 9, adiciona o 9 na frente (se necessário)
+    if (number.startsWith('8') || number.startsWith('9')) {
+      // Se começar com 9, já tem 8 dígitos, precisamos garantir que tenha 9 dígitos no total
+      if (number.startsWith('9') && number.length === 8) {
+        return `+55${ddd}${number}`;
+      }
+      // Para números que começam com 8, adicionamos o 9
+      if (number.startsWith('8')) {
+        return `+55${ddd}9${number}`;
+      }
     }
   }
   
@@ -238,7 +245,7 @@ export const filterCampaignData = (
   data: CampaignData[], 
   filters: FilterOptions
 ): CampaignData[] => {
-  // Primeiro criamos uma cópia dos dados para não modificar o original diretamente
+  // Primeiro criamos uma cópia dos dados para não modificar o original
   let processedData = [...data];
   
   // Aplicamos a correção de números se o filtro estiver ativado
@@ -264,12 +271,18 @@ export const filterCampaignData = (
     switch(filters.responseFilter) {
       case 'responded':
         if (!item.replyMessageText) return false;
+        if (isUnsubscribeMessage(item.replyMessageText)) return false; // Exclui descadastros
         break;
       case 'not_responded':
         if (item.replyMessageText) return false;
         break;
       case 'unsubscribed':
         if (!item.replyMessageText || !isUnsubscribeMessage(item.replyMessageText)) return false;
+        break;
+      case 'responded_and_unsubscribed':
+        // Nova opção: combina respondidos com descadastros
+        if (!item.replyMessageText) return false;
+        // Não filtramos pelo conteúdo, apenas garantimos que existe resposta
         break;
     }
     
@@ -287,7 +300,7 @@ export const filterCampaignData = (
       }
     }
     
-    // Filtro de números inválidos - agora após tentativa de correção
+    // Filtro de números inválidos - após tentativa de correção
     if (filters.removeInvalidNumbers && !isValidBrazilianMobileNumber(item.fullNumber)) {
       return false;
     }

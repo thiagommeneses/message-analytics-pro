@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useCampaign } from "@/context/CampaignContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, FileText, MessageSquare } from "lucide-react";
-import { ExportOptions as ExportOptionsType, ZenviaExportOptions } from "@/types/campaign";
+import { Download, FileText, MessageSquare, FileSpreadsheet } from "lucide-react";
+import { ExportOptions as ExportOptionsType, ZenviaExportOptions, ExcelExportOptions } from "@/types/campaign";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,9 +31,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const ExportOptions = () => {
-  const { exportData, exportToZenvia, filteredData, isLoading } = useCampaign();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isZenviaDialogOpen, setIsZenviaDialogOpen] = useState(false);
+  const { exportData, exportToZenvia, exportToExcel, filteredData, isLoading } = useCampaign();
+  const [dialogState, setDialogState] = useState<{
+    csvOpen: boolean;
+    zenviaOpen: boolean;
+    excelOpen: boolean;
+  }>({
+    csvOpen: false,
+    zenviaOpen: false,
+    excelOpen: false
+  });
+  
   const [exportOptions, setExportOptions] = useState<ExportOptionsType>({
     onlyPhoneNumber: true,
     includeNames: false,
@@ -41,11 +49,18 @@ const ExportOptions = () => {
     splitFiles: false,
     recordsPerFile: 1000
   });
+  
   const [zenviaOptions, setZenviaOptions] = useState<ZenviaExportOptions>({
     messageText: "",
     splitFiles: false,
     recordsPerFile: 1000
   });
+  
+  const [excelOptions, setExcelOptions] = useState<ExcelExportOptions>({
+    splitFiles: false,
+    recordsPerFile: 1000
+  });
+  
   const [exportType, setExportType] = useState<'simple' | 'custom'>('simple');
 
   const availableColumns = filteredData.length > 0 
@@ -54,18 +69,20 @@ const ExportOptions = () => {
 
   const handleExport = () => {
     exportData(exportOptions);
-    // Fechamos o diálogo com um pequeno delay para garantir que o processo de exportação inicie primeiro
-    setTimeout(() => {
-      setIsDialogOpen(false);
-    }, 100);
+    // Fechamos o diálogo imediatamente para evitar duplos cliques
+    setDialogState(prev => ({ ...prev, csvOpen: false }));
   };
 
   const handleZenviaExport = () => {
     exportToZenvia(zenviaOptions);
-    // Fechamos o diálogo com um pequeno delay para garantir que o processo de exportação inicie primeiro
-    setTimeout(() => {
-      setIsZenviaDialogOpen(false);
-    }, 100);
+    // Fechamos o diálogo imediatamente para evitar duplos cliques
+    setDialogState(prev => ({ ...prev, zenviaOpen: false }));
+  };
+  
+  const handleExcelExport = () => {
+    exportToExcel(excelOptions);
+    // Fechamos o diálogo imediatamente para evitar duplos cliques
+    setDialogState(prev => ({ ...prev, excelOpen: false }));
   };
 
   const handleExportTypeChange = (value: string) => {
@@ -136,12 +153,19 @@ const ExportOptions = () => {
       splitFiles: checked
     });
   };
+  
+  const toggleExcelSplitFiles = (checked: boolean) => {
+    setExcelOptions({
+      ...excelOptions,
+      splitFiles: checked
+    });
+  };
 
   const handleRecordsPerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10) || 1000;
     setExportOptions({
       ...exportOptions,
-      recordsPerFile: value
+      recordsPerFile: Math.max(1, Math.min(value, 10000))
     });
   };
 
@@ -149,7 +173,15 @@ const ExportOptions = () => {
     const value = parseInt(e.target.value, 10) || 1000;
     setZenviaOptions({
       ...zenviaOptions,
-      recordsPerFile: value
+      recordsPerFile: Math.max(1, Math.min(value, 10000))
+    });
+  };
+  
+  const handleExcelRecordsPerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10) || 1000;
+    setExcelOptions({
+      ...excelOptions,
+      recordsPerFile: Math.max(1, Math.min(value, 5000))
     });
   };
 
@@ -158,6 +190,16 @@ const ExportOptions = () => {
       ...zenviaOptions,
       messageText: e.target.value.slice(0, 130)
     });
+  };
+  
+  const openDialog = (type: 'csv' | 'zenvia' | 'excel') => {
+    if (type === 'csv') {
+      setDialogState({ csvOpen: true, zenviaOpen: false, excelOpen: false });
+    } else if (type === 'zenvia') {
+      setDialogState({ csvOpen: false, zenviaOpen: true, excelOpen: false });
+    } else {
+      setDialogState({ csvOpen: false, zenviaOpen: false, excelOpen: true });
+    }
   };
 
   return (
@@ -170,25 +212,23 @@ const ExportOptions = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => setIsDialogOpen(true)}>
+          <DropdownMenuItem onClick={() => openDialog('csv')}>
             <FileText className="h-4 w-4 mr-2" />
             <span>Exportar CSV</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsZenviaDialogOpen(true)}>
+          <DropdownMenuItem onClick={() => openDialog('zenvia')}>
             <MessageSquare className="h-4 w-4 mr-2" />
             <span>Exportar para zEnvia</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => openDialog('excel')}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            <span>Exportar Excel</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Dialog para exportação padrão CSV - Usando onOpenChange com tratamento melhorado */}
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setTimeout(() => setIsDialogOpen(false), 0);
-        } else {
-          setIsDialogOpen(true);
-        }
-      }}>
+      {/* Dialog para exportação padrão CSV */}
+      <Dialog open={dialogState.csvOpen} onOpenChange={(open) => setDialogState(prev => ({ ...prev, csvOpen: open }))}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Opções de exportação</DialogTitle>
@@ -283,9 +323,12 @@ const ExportOptions = () => {
                       value={exportOptions.recordsPerFile} 
                       onChange={handleRecordsPerFileChange}
                       min={1}
+                      max={10000}
                     />
                     <p className="text-sm text-muted-foreground">
                       Total de arquivos: {Math.ceil(filteredData.length / exportOptions.recordsPerFile)}
+                      {exportOptions.recordsPerFile < 1 && " (valor mínimo: 1)"}
+                      {exportOptions.recordsPerFile > 10000 && " (valor máximo: 10000)"}
                     </p>
                   </div>
                 </div>
@@ -294,7 +337,7 @@ const ExportOptions = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogState(prev => ({ ...prev, csvOpen: false }))}>
               Cancelar
             </Button>
             <Button 
@@ -309,14 +352,8 @@ const ExportOptions = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para exportação Zenvia - Usando onOpenChange com tratamento melhorado */}
-      <Dialog open={isZenviaDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setTimeout(() => setIsZenviaDialogOpen(false), 0);
-        } else {
-          setIsZenviaDialogOpen(true);
-        }
-      }}>
+      {/* Dialog para exportação Zenvia */}
+      <Dialog open={dialogState.zenviaOpen} onOpenChange={(open) => setDialogState(prev => ({ ...prev, zenviaOpen: open }))}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Exportar para zEnvia</DialogTitle>
@@ -362,9 +399,12 @@ const ExportOptions = () => {
                       value={zenviaOptions.recordsPerFile} 
                       onChange={handleZenviaRecordsPerFileChange}
                       min={1}
+                      max={10000}
                     />
                     <p className="text-sm text-muted-foreground">
                       Total de arquivos: {Math.ceil(filteredData.length / zenviaOptions.recordsPerFile)}
+                      {zenviaOptions.recordsPerFile < 1 && " (valor mínimo: 1)"}
+                      {zenviaOptions.recordsPerFile > 10000 && " (valor máximo: 10000)"}
                     </p>
                   </div>
                 </div>
@@ -382,7 +422,7 @@ const ExportOptions = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsZenviaDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogState(prev => ({ ...prev, zenviaOpen: false }))}>
               Cancelar
             </Button>
             <Button 
@@ -390,6 +430,71 @@ const ExportOptions = () => {
               disabled={zenviaOptions.messageText.trim().length === 0}
             >
               Exportar para zEnvia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog para exportação Excel */}
+      <Dialog open={dialogState.excelOpen} onOpenChange={(open) => setDialogState(prev => ({ ...prev, excelOpen: open }))}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Exportar para Excel</DialogTitle>
+            <DialogDescription>
+              Exporte os {filteredData.length} registros filtrados para o formato Excel.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Checkbox 
+                  id="excel-split-files" 
+                  checked={excelOptions.splitFiles}
+                  onCheckedChange={toggleExcelSplitFiles}
+                />
+                <Label htmlFor="excel-split-files">Dividir em múltiplos arquivos</Label>
+              </div>
+              
+              {excelOptions.splitFiles && (
+                <div className="ml-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="excel-records-per-file">Registros por arquivo</Label>
+                    <Input 
+                      id="excel-records-per-file" 
+                      type="number" 
+                      value={excelOptions.recordsPerFile} 
+                      onChange={handleExcelRecordsPerFileChange}
+                      min={1}
+                      max={5000}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Total de arquivos: {Math.ceil(filteredData.length / excelOptions.recordsPerFile)}
+                      {excelOptions.recordsPerFile < 1 && " (valor mínimo: 1)"}
+                      {excelOptions.recordsPerFile > 5000 && " (valor máximo: 5000)"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="text-sm">
+              <p className="font-medium mb-1">Informações sobre o formato Excel:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Os dados serão exportados com o mesmo formato apresentado na tabela</li>
+                <li>Cabeçalhos serão traduzidos para português</li>
+                <li>Datas serão formatadas no padrão brasileiro</li>
+                <li>Status serão traduzidos para português</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogState(prev => ({ ...prev, excelOpen: false }))}>
+              Cancelar
+            </Button>
+            <Button onClick={handleExcelExport}>
+              Exportar para Excel
             </Button>
           </DialogFooter>
         </DialogContent>

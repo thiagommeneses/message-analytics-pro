@@ -8,18 +8,22 @@ import {
   MessageStatus,
   DateRange,
   ExportOptions,
-  ZenviaExportOptions
+  ZenviaExportOptions,
+  ExcelExportOptions
 } from '../types/campaign';
 import { 
   processCsvFile, 
   filterCampaignData, 
   calculateMetrics, 
-  prepareDataForExport,
-  prepareZenviaExport,
   isUnsubscribeMessage,
   isValidBrazilianMobileNumber,
   correctBrazilianMobileNumber
 } from '../services/csvService';
+import {
+  exportCSV,
+  exportZenvia,
+  exportExcel
+} from '../services/exportService';
 import { useToast } from "@/hooks/use-toast";
 
 interface CampaignContextType {
@@ -35,6 +39,7 @@ interface CampaignContextType {
   updateFilters: (newFilters: Partial<FilterOptions>) => void;
   exportData: (options: ExportOptions) => void;
   exportToZenvia: (options: ZenviaExportOptions) => void;
+  exportToExcel: (options: ExcelExportOptions) => void;
   resetData: () => void;
 }
 
@@ -153,67 +158,29 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   
   const exportData = (options: ExportOptions) => {
     try {
-      // Determina quais colunas exportar
-      let columnsToExport: string[] = [];
+      setIsLoading(true);
       
-      if (options.onlyPhoneNumber) {
-        columnsToExport = ['fullNumber'];
-      } else if (options.includeNames) {
-        columnsToExport = ['fullNumber', 'name'];
-      } else if (options.customColumns.length) {
-        columnsToExport = options.customColumns;
-      } else {
-        // Default: exporta todas as colunas
-        columnsToExport = Object.keys(filteredData[0] || {});
+      if (filteredData.length === 0) {
+        toast({
+          title: "Não há dados para exportar",
+          description: "Aplique filtros menos restritivos ou carregue um novo arquivo.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
       
-      // Prepara CSV
-      const csvContent = prepareDataForExport(filteredData, { columns: columnsToExport });
-      
-      // Se não precisar dividir o arquivo, exporta normalmente
-      if (!options.splitFiles || options.recordsPerFile <= 0) {
-        // Cria um blob e gera download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        
-        // Usa um método mais seguro para download
-        downloadFile(url, `campanhas_filtradas_${new Date().toISOString().slice(0,10)}.csv`);
-        
+      exportCSV(filteredData, options, () => {
+        setIsLoading(false);
         toast({
           title: "Exportação concluída",
           description: `${filteredData.length} registros exportados.`,
         });
-      } else {
-        // Divide em múltiplos arquivos
-        const csvHeader = columnsToExport.join(',') + '\n';
-        const csvRows = csvContent.split('\n').slice(1); // Remove o cabeçalho
-        const totalRecords = csvRows.length;
-        const recordsPerFile = options.recordsPerFile;
-        const totalFiles = Math.ceil(totalRecords / recordsPerFile);
-        
-        // Cria e baixa cada arquivo
-        for (let i = 0; i < totalFiles; i++) {
-          const startIdx = i * recordsPerFile;
-          const endIdx = Math.min(startIdx + recordsPerFile, totalRecords);
-          const fileRows = csvRows.slice(startIdx, endIdx);
-          const fileContent = csvHeader + fileRows.join('\n');
-          
-          const blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          
-          // Usa um setTimeout para criar uma pequena pausa entre os downloads
-          setTimeout(() => {
-            downloadFile(url, `campanhas_filtradas_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
-          }, i * 200);  // 200ms de intervalo entre cada download
-        }
-        
-        toast({
-          title: "Exportação concluída",
-          description: `${filteredData.length} registros exportados em ${totalFiles} arquivos.`,
-        });
-      }
+      });
     } catch (error) {
       console.error("Erro na exportação:", error);
+      setIsLoading(false);
+      
       toast({
         title: "Erro na exportação",
         description: "Não foi possível exportar os dados.",
@@ -224,53 +191,29 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   
   const exportToZenvia = (options: ZenviaExportOptions) => {
     try {
-      // Prepara CSV para Zenvia - sem aspas duplas no texto da mensagem
-      const csvContent = prepareZenviaExport(filteredData, options.messageText);
+      setIsLoading(true);
       
-      // Se não precisar dividir o arquivo, exporta normalmente
-      if (!options.splitFiles || options.recordsPerFile <= 0) {
-        // Cria um blob e gera download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        
-        // Usa um método mais seguro para download
-        downloadFile(url, `zenvia_export_${new Date().toISOString().slice(0,10)}.csv`);
-        
+      if (filteredData.length === 0) {
+        toast({
+          title: "Não há dados para exportar",
+          description: "Aplique filtros menos restritivos ou carregue um novo arquivo.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      exportZenvia(filteredData, options, () => {
+        setIsLoading(false);
         toast({
           title: "Exportação para Zenvia concluída",
           description: `${filteredData.length} registros exportados.`,
         });
-      } else {
-        // Divide em múltiplos arquivos
-        const csvHeader = "celular;sms\n";
-        const csvRows = csvContent.split('\n').slice(1); // Remove o cabeçalho
-        const totalRecords = csvRows.length;
-        const recordsPerFile = options.recordsPerFile;
-        const totalFiles = Math.ceil(totalRecords / recordsPerFile);
-        
-        // Cria e baixa cada arquivo
-        for (let i = 0; i < totalFiles; i++) {
-          const startIdx = i * recordsPerFile;
-          const endIdx = Math.min(startIdx + recordsPerFile, totalRecords);
-          const fileRows = csvRows.slice(startIdx, endIdx);
-          const fileContent = csvHeader + fileRows.join('\n');
-          
-          const blob = new Blob([fileContent], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          
-          // Usa um setTimeout para criar uma pequena pausa entre os downloads
-          setTimeout(() => {
-            downloadFile(url, `zenvia_export_parte${i+1}_${new Date().toISOString().slice(0,10)}.csv`);
-          }, i * 200);  // 200ms de intervalo entre cada download
-        }
-        
-        toast({
-          title: "Exportação para Zenvia concluída",
-          description: `${filteredData.length} registros exportados em ${totalFiles} arquivos.`,
-        });
-      }
+      });
     } catch (error) {
       console.error("Erro na exportação para Zenvia:", error);
+      setIsLoading(false);
+      
       toast({
         title: "Erro na exportação",
         description: "Não foi possível exportar os dados para Zenvia.",
@@ -279,24 +222,38 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Função auxiliar para download seguro - CORRIGIDA para resolver problemas de UI bloqueada
-  const downloadFile = (url: string, filename: string) => {
-    // Cria um link temporário
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    
-    // Dispara o download sem adicionar o link ao DOM
-    document.body.appendChild(link);
-    link.click();
-    
-    // Remove o link e libera o URL imediatamente após o clique
-    setTimeout(() => {
-      // Remover o link do DOM é crucial para evitar problemas de UI bloqueada
-      document.body.removeChild(link);
-      // Liberamos o URL para liberar memória
-      URL.revokeObjectURL(url);
-    }, 100);
+  // Nova função para exportar para Excel
+  const exportToExcel = (options: ExcelExportOptions) => {
+    try {
+      setIsLoading(true);
+      
+      if (filteredData.length === 0) {
+        toast({
+          title: "Não há dados para exportar",
+          description: "Aplique filtros menos restritivos ou carregue um novo arquivo.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      exportExcel(filteredData, options, () => {
+        setIsLoading(false);
+        toast({
+          title: "Exportação para Excel concluída",
+          description: `${filteredData.length} registros exportados.`,
+        });
+      });
+    } catch (error) {
+      console.error("Erro na exportação para Excel:", error);
+      setIsLoading(false);
+      
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os dados para Excel.",
+        variant: "destructive",
+      });
+    }
   };
   
   const resetData = () => {
@@ -322,6 +279,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         updateFilters,
         exportData,
         exportToZenvia,
+        exportToExcel,
         resetData
       }}
     >

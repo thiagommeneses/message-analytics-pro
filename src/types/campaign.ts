@@ -23,14 +23,15 @@ export interface FilterOptions {
   responseFilter: ResponseFilter;
   dateRange: DateRange;
   removeDuplicates: boolean;
-  removeInvalidNumbers: boolean; // Nova opção de filtro
+  removeInvalidNumbers: boolean;
 }
 
 export type ResponseFilter = 
   | 'all' 
   | 'responded' 
   | 'not_responded' 
-  | 'unsubscribed';
+  | 'unsubscribed'
+  | 'responded_and_unsubscribed'; // Nova opção de filtro combinado
 
 export interface DateRange {
   startDate: Date | null;
@@ -42,7 +43,7 @@ export interface CampaignMetrics {
   filteredContacts: number;
   notResponded: number;
   unsubscribed: number;
-  invalidNumbers: number; // Nova métrica
+  invalidNumbers: number;
   statusDistribution: Record<MessageStatus, number>;
   responseDistribution: {
     responded: number;
@@ -60,6 +61,11 @@ export interface ExportOptions {
 
 export interface ZenviaExportOptions {
   messageText: string;
+  splitFiles: boolean;
+  recordsPerFile: number;
+}
+
+export interface ExcelExportOptions {
   splitFiles: boolean;
   recordsPerFile: number;
 }
