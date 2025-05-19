@@ -16,15 +16,19 @@ const Header = () => {
             : "Carregue um arquivo CSV para iniciar a análise"}
         </p>
       </div>
-    <small>por Thiago Meneses</small>  
-      <div className="flex items-center gap-3">
-        <ExportOptions />
-        
-        {originalData.length > 0 && (
-          <Button variant="ghost" onClick={resetData}>
-            Limpar dados
-          </Button>
-        )}
+      <div className="flex flex-col items-end">
+        <div className="flex items-center gap-3">
+          <ExportOptions />
+          
+          {originalData.length > 0 && (
+            <Button variant="ghost" onClick={resetData}>
+              Limpar dados
+            </Button>
+          )}
+        </div>
+        <div className="text-sm text-muted-foreground mt-2">
+          Desenvolvido por <span className="font-medium">Thiago Marques Meneses</span> | <span className="font-medium">Pixmeyou</span>
+        </div>
       </div>
     </header>
   );
