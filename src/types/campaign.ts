@@ -1,10 +1,10 @@
-
 export interface CampaignData {
   fullNumber: string;
   name?: string;
   templateTitle: string;
   campaignMessageStatus: MessageStatus;
   replyMessageText?: string;
+  replyMessageType?: string; // Nova coluna para o tipo de resposta
   sentDate: string;
   // Outros campos que possam estar no CSV
 }
@@ -24,7 +24,8 @@ export interface FilterOptions {
   dateRange: DateRange;
   removeDuplicates: boolean;
   removeInvalidNumbers: boolean;
-  removeNoInterest: boolean; // Nova opção de filtro
+  removeNoInterest: boolean;
+  responseTypes: string[]; // Novo campo para filtrar por tipo de resposta
 }
 
 export type ResponseFilter = 

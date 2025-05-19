@@ -76,6 +76,7 @@ const parseCsv = (csvContent: string): CampaignData[] => {
   const dateIndex = headers.findIndex(h => ['campaign_message_created_at', 'campaignmessagecreatedat', 'dataenvio', 'sentdate'].includes(h));
   const replyIndex = headers.findIndex(h => ['reply_message_text', 'replymessagetext', 'resposta'].includes(h));
   const nameIndex = headers.findIndex(h => ['name', 'nome'].includes(h));
+  const replyTypeIndex = headers.findIndex(h => ['reply_message_type', 'replymessagetype', 'tiporesposta'].includes(h)); // Nova coluna
   
   console.log("Índices encontrados:", {
     phoneIndex,
@@ -83,7 +84,8 @@ const parseCsv = (csvContent: string): CampaignData[] => {
     statusIndex,
     dateIndex,
     replyIndex,
-    nameIndex
+    nameIndex,
+    replyTypeIndex // Novo índice
   });
   
   // Verificar se temos pelo menos os índices essenciais
@@ -121,6 +123,11 @@ const parseCsv = (csvContent: string): CampaignData[] => {
     
     if (replyIndex !== -1 && values[replyIndex]) {
       entry.replyMessageText = values[replyIndex];
+    }
+    
+    // Adicionar campo do tipo de resposta se existir
+    if (replyTypeIndex !== -1 && values[replyTypeIndex]) {
+      entry.replyMessageType = values[replyTypeIndex];
     }
     
     data.push(entry);
@@ -302,6 +309,11 @@ export const filterCampaignData = (
         if (!item.replyMessageText) return false;
         // Não filtramos pelo conteúdo, apenas garantimos que existe resposta
         break;
+    }
+    
+    // Novo filtro: filtrar pelo tipo de resposta
+    if (filters.responseTypes.length > 0 && (!item.replyMessageType || !filters.responseTypes.includes(item.replyMessageType))) {
+      return false;
     }
     
     // Novo filtro: remover contatos que responderam com "Não tenho interesse"

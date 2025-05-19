@@ -34,6 +34,7 @@ interface CampaignContextType {
   filters: FilterOptions;
   availableTemplates: string[];
   availableStatuses: MessageStatus[];
+  availableResponseTypes: string[]; // Nova lista para tipos de resposta
   
   uploadCsv: (file: File) => Promise<void>;
   updateFilters: (newFilters: Partial<FilterOptions>) => void;
@@ -53,21 +54,11 @@ const defaultFilters: FilterOptions = {
   },
   removeDuplicates: false,
   removeInvalidNumbers: false,
-  removeNoInterest: false
+  removeNoInterest: false,
+  responseTypes: [] // Inicializa vazio
 };
 
-const emptyMetrics: CampaignMetrics = {
-  totalContacts: 0,
-  filteredContacts: 0,
-  notResponded: 0,
-  unsubscribed: 0,
-  invalidNumbers: 0,
-  statusDistribution: {} as Record<MessageStatus, number>,
-  responseDistribution: {
-    responded: 0,
-    notResponded: 0
-  }
-};
+// ... keep existing code (emptyMetrics declaration)
 
 const CampaignContext = createContext<CampaignContextType | undefined>(undefined);
 
@@ -79,6 +70,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
   const [availableTemplates, setAvailableTemplates] = useState<string[]>([]);
   const [availableStatuses, setAvailableStatuses] = useState<MessageStatus[]>([]);
+  const [availableResponseTypes, setAvailableResponseTypes] = useState<string[]>([]);
   
   const { toast } = useToast();
   
@@ -101,11 +93,19 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       const templates = [...new Set(data.map(item => item.templateTitle))];
       const statuses = [...new Set(data.map(item => item.campaignMessageStatus))];
       
+      // Extrai tipos de resposta únicos
+      const responseTypes = [...new Set(data
+        .filter(item => item.replyMessageType)
+        .map(item => item.replyMessageType as string)
+      )];
+      
       console.log("Templates disponíveis:", templates);
       console.log("Status disponíveis:", statuses);
+      console.log("Tipos de resposta disponíveis:", responseTypes);
       
       setAvailableTemplates(templates);
       setAvailableStatuses(statuses as MessageStatus[]);
+      setAvailableResponseTypes(responseTypes);
       
       // Inicializa com todos os dados
       setFilteredData(data);
@@ -264,6 +264,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     setFilters(defaultFilters);
     setAvailableTemplates([]);
     setAvailableStatuses([]);
+    setAvailableResponseTypes([]);
   };
   
   return (
@@ -276,6 +277,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         filters,
         availableTemplates,
         availableStatuses,
+        availableResponseTypes,
         uploadCsv,
         updateFilters,
         exportData,

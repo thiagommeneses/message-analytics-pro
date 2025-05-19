@@ -22,6 +22,7 @@ import { Calendar as CalendarIcon, Filter, Check, PhoneCall, MessageSquare } fro
 import { useState } from "react";
 import { MessageStatus } from "@/types/campaign";
 import ResponseFilterOptions from "./FilterOptions";
+import ResponseTypeFilter from "./ResponseTypeFilter";
 
 const FilterPanel = () => {
   const { 
@@ -162,7 +163,7 @@ const FilterPanel = () => {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates", "phoneNumbers", "noInterest"]}>
+      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates", "phoneNumbers", "noInterest", "responseTypes"]}>
         {/* Filtro de Templates */}
         <AccordionItem value="templates">
           <AccordionTrigger className="text-sm font-medium">
@@ -248,6 +249,22 @@ const FilterPanel = () => {
           </AccordionTrigger>
           <AccordionContent>
             <ResponseFilterOptions disabled={isLoading} />
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Novo filtro: Tipo de resposta */}
+        <AccordionItem value="responseTypes">
+          <AccordionTrigger className="text-sm font-medium">
+            <div className="flex items-center">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Tipos de resposta
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <ResponseTypeFilter disabled={isLoading} />
+            <p className="text-xs text-muted-foreground mt-2">
+              Filtra os contatos pelo tipo de resposta recebida. Esta informação vem da coluna 'reply_message_type' do arquivo CSV.
+            </p>
           </AccordionContent>
         </AccordionItem>
 
@@ -389,7 +406,7 @@ const FilterPanel = () => {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Novo filtro: Remover mensagens de desinteresse */}
+        {/* Filtro: Remover mensagens de desinteresse */}
         <AccordionItem value="noInterest">
           <AccordionTrigger className="text-sm font-medium">
             <div className="flex items-center">

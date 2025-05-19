@@ -1,4 +1,5 @@
 
+
 import { useCampaign } from "@/context/CampaignContext";
 import {
   Table,
@@ -86,6 +87,7 @@ const DataTable = () => {
               <TableHead>Campanha</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Resposta</TableHead>
+              <TableHead>Tipo de Resposta</TableHead>
               <TableHead>Data de Envio</TableHead>
             </TableRow>
           </TableHeader>
@@ -122,6 +124,15 @@ const DataTable = () => {
                     </div>
                   ) : (
                     <span className="text-muted-foreground text-sm">Sem resposta</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {item.replyMessageType ? (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                      {item.replyMessageType}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
                   )}
                 </TableCell>
                 <TableCell>{formatDate(item.sentDate)}</TableCell>
