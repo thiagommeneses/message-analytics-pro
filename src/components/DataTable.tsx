@@ -141,7 +141,6 @@ const DataTable = () => {
           </TableBody>
         </Table>
       </div>
-      
       {/* Paginação */}
       {totalPages > 1 && (
         <div className="py-4 border-t">
@@ -220,5 +219,4 @@ const DataTable = () => {
     </div>
   );
 };
-
 export default DataTable;

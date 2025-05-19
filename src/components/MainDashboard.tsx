@@ -25,7 +25,9 @@ const MainDashboard = () => {
               O arquivo deve conter colunas como número do telefone, 
               nome, status da mensagem, respostas e datas de envio.
             </p>
-          </div>
+	      <br/>
+		<p className="text-sm">Desenvolvido por Thiago Meneses</p>
+	  </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
