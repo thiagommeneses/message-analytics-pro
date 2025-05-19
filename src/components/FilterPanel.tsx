@@ -18,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon, Filter, Check, PhoneCall } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, Check, PhoneCall, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { MessageStatus } from "@/types/campaign";
 import ResponseFilterOptions from "./FilterOptions";
@@ -122,6 +122,10 @@ const FilterPanel = () => {
     updateFilters({ removeInvalidNumbers: checked });
   };
 
+  const handleRemoveNoInterestChange = (checked: boolean) => {
+    updateFilters({ removeNoInterest: checked });
+  };
+
   const clearFilters = () => {
     updateFilters({
       templates: [],
@@ -132,7 +136,8 @@ const FilterPanel = () => {
         endDate: null
       },
       removeDuplicates: false,
-      removeInvalidNumbers: false
+      removeInvalidNumbers: false,
+      removeNoInterest: false
     });
     setCalendarOpen(false);
   };
@@ -157,7 +162,7 @@ const FilterPanel = () => {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates", "phoneNumbers"]}>
+      <Accordion type="multiple" defaultValue={["templates", "statuses", "responses", "dates", "duplicates", "phoneNumbers", "noInterest"]}>
         {/* Filtro de Templates */}
         <AccordionItem value="templates">
           <AccordionTrigger className="text-sm font-medium">
@@ -380,6 +385,31 @@ const FilterPanel = () => {
             <p className="text-xs text-muted-foreground mt-2">
               Quando ativado, valida e corrige números para o formato WhatsApp brasileiro (+55 DDD 9XXXXXXXX).
               Números que começam com 8 após o DDD receberão um 9 adicional automaticamente.
+            </p>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Novo filtro: Remover mensagens de desinteresse */}
+        <AccordionItem value="noInterest">
+          <AccordionTrigger className="text-sm font-medium">
+            <div className="flex items-center">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Filtrar mensagens de desinteresse
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="remove-no-interest" 
+                checked={filters.removeNoInterest}
+                onCheckedChange={handleRemoveNoInterestChange}
+                disabled={isLoading}
+              />
+              <Label htmlFor="remove-no-interest">Remover contatos sem interesse</Label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Quando ativado, remove contatos que responderam com mensagens como "Não tenho interesse", 
+              "Não estou interessado" ou mensagens que comecem com "Não, ".
             </p>
           </AccordionContent>
         </AccordionItem>

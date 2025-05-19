@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { 
   CampaignData, 
@@ -17,7 +16,8 @@ import {
   calculateMetrics, 
   isUnsubscribeMessage,
   isValidBrazilianMobileNumber,
-  correctBrazilianMobileNumber
+  correctBrazilianMobileNumber,
+  isNoInterestMessage
 } from '../services/csvService';
 import {
   exportCSV,
@@ -52,7 +52,8 @@ const defaultFilters: FilterOptions = {
     endDate: null
   },
   removeDuplicates: false,
-  removeInvalidNumbers: false
+  removeInvalidNumbers: false,
+  removeNoInterest: false
 };
 
 const emptyMetrics: CampaignMetrics = {

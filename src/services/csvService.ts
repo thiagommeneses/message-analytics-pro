@@ -1,8 +1,10 @@
-
 import { CampaignData, FilterOptions, CampaignMetrics } from '../types/campaign';
 
 // Palavras que indicam descadastro
 const UNSUBSCRIBE_KEYWORDS = ['sair', 'pare', 'não', 'nao', 'descadastrar', 'cancelar', 'remove', 'stop', 'unsubscribe'];
+
+// Palavras que indicam desinteresse
+const NO_INTEREST_KEYWORDS = ['não tenho interesse', 'não estou interessado', 'não me interessa', 'sem interesse', 'não quero'];
 
 // Padrões para validação de números de telefone brasileiro
 const BR_PHONE_REGEX = {
@@ -240,6 +242,22 @@ export const correctBrazilianMobileNumber = (phoneNumber: string): string => {
   return phoneNumber;
 };
 
+// Verifica se a mensagem é de descadastro
+export const isUnsubscribeMessage = (message: string): boolean => {
+  const lowerMessage = message.toLowerCase().trim();
+  return UNSUBSCRIBE_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
+};
+
+// Nova função: Verifica se a mensagem é de desinteresse
+export const isNoInterestMessage = (message: string): boolean => {
+  if (!message) return false;
+  
+  const lowerMessage = message.toLowerCase().trim();
+  
+  return NO_INTEREST_KEYWORDS.some(keyword => lowerMessage.includes(keyword)) ||
+         lowerMessage.startsWith('não,');
+};
+
 // Função para filtrar os dados com base nas opções selecionadas
 export const filterCampaignData = (
   data: CampaignData[], 
@@ -286,6 +304,11 @@ export const filterCampaignData = (
         break;
     }
     
+    // Novo filtro: remover contatos que responderam com "Não tenho interesse"
+    if (filters.removeNoInterest && item.replyMessageText && isNoInterestMessage(item.replyMessageText)) {
+      return false;
+    }
+    
     // Filtro de data
     if (filters.dateRange.startDate && filters.dateRange.endDate) {
       const messageDate = new Date(item.sentDate);
@@ -321,12 +344,6 @@ export const filterCampaignData = (
   }
   
   return filteredData;
-};
-
-// Verifica se a mensagem é de descadastro
-export const isUnsubscribeMessage = (message: string): boolean => {
-  const lowerMessage = message.toLowerCase().trim();
-  return UNSUBSCRIBE_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
 };
 
 // Calcula métricas baseadas nos dados

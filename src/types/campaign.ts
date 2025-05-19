@@ -24,6 +24,7 @@ export interface FilterOptions {
   dateRange: DateRange;
   removeDuplicates: boolean;
   removeInvalidNumbers: boolean;
+  removeNoInterest: boolean; // Nova opção de filtro
 }
 
 export type ResponseFilter = 
